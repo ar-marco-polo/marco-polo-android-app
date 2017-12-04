@@ -185,12 +185,12 @@ class FullscreenActivity : AppCompatActivity() {
             // now we rotate the original ears by our device position
             val ears = origin.map { ear -> Utils.rotateByQuaternion(quaternion, ear) }
 
-            val audioCurve = { x: Double -> Math.pow(x - 2.16, 6.0) * 0.01 }
+            val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
             
             // and calculate the angles between the ears and our sound position
             val volume = ears.map { ear ->
                 val rad = Utils.radiansBetween(ear, soundPosition)
-                // rad is in range of [0, PI] audioCurve between [~PI/2, ~PI] is 0
+                // rad is in range of [0, PI] audioCurve returns 0 above PI / 2
                 audioCurve(rad)
             }
 
