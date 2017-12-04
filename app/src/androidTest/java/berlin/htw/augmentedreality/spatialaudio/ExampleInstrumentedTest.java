@@ -1,4 +1,4 @@
-package berlin.htw.augmented_reality.spatial_audio;
+package berlin.htw.augmentedreality.spatialaudio;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

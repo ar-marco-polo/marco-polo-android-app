@@ -1,4 +1,4 @@
-package berlin.htw.augmented_reality.spatial_audio;
+package berlin.htw.augmentedreality.spatialaudio;
 
 import org.junit.Test;
 
