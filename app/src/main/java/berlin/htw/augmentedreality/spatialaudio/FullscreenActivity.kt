@@ -12,6 +12,7 @@ import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.View
 
 /**
@@ -183,12 +184,13 @@ class FullscreenActivity : AppCompatActivity() {
 
             // now we rotate the original ears by our device position
             val ears = origin.map { ear -> Utils.rotateByQuaternion(quaternion, ear) }
+
+            val audioCurve = { x: Double -> Math.pow(x - 2.16, 6.0) * 0.01 }
             
             // and calculate the angles between the ears and our sound position
             val volume = ears.map { ear ->
                 val rad = Utils.radiansBetween(ear, soundPosition)
-                val misdirection = Math.abs(rad - Math.PI) - Math.PI / 2
-                Math.max(misdirection / Math.PI / 2, 0.0)
+                audioCurve(rad)
             }
 
             mediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
