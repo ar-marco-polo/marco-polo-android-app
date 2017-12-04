@@ -1,6 +1,14 @@
 package berlin.htw.augmentedreality.spatialaudio
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.res.AssetFileDescriptor
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.MediaPlayer
+import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -15,6 +23,9 @@ class FullscreenActivity : AppCompatActivity() {
     private var mContentView: View? = null
     private var mControlsView: View? = null
     private var mVisible: Boolean = false
+
+    private var mediaPlayer: MediaPlayer? = null
+    private var rotationSensor: Sensor? = null
 
     /**
      * Touch listener to use for in-layout UI controls to delay hiding the
@@ -69,7 +80,24 @@ class FullscreenActivity : AppCompatActivity() {
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener)
+
+        // Initialize MediaPlayer
+        mediaPlayer = MediaPlayer.create(this, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
+        mediaPlayer!!.setVolume(0.0f, 0.0f)
+        mediaPlayer!!.isLooping = true
+        mediaPlayer!!.start()
+
+        // set up sensor listener
+        // see also: https://source.android.com/devices/sensors/sensor-types#rotation_vector
+        val sensorManager = (getSystemService(Context.SENSOR_SERVICE) as SensorManager)
+
+        // rotation vector (= Accelerometer, Magnetometer, and Gyroscope)
+        rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+        sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
     }
+
+    // position sound at the north pole
+    private val soundPosition = floatArrayOf(0.0f, 1.0f, 0.0f)
 
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
@@ -112,7 +140,7 @@ class FullscreenActivity : AppCompatActivity() {
     }
 
     /**
-     * Schedules a call to hide() in [delay] milliseconds, canceling any
+     * Schedules a call to hide() in [delayMillis] milliseconds, canceling any
      * previously scheduled calls.
      */
     private fun delayedHide(delayMillis: Int) {
@@ -123,12 +151,12 @@ class FullscreenActivity : AppCompatActivity() {
     companion object {
         /**
          * Whether or not the system UI should be auto-hidden after
-         * [.AUTO_HIDE_DELAY_MILLIS] milliseconds.
+         * [AUTO_HIDE_DELAY_MILLIS] milliseconds.
          */
         private val AUTO_HIDE = true
 
         /**
-         * If [.AUTO_HIDE] is set, the number of milliseconds to wait after
+         * If [AUTO_HIDE] is set, the number of milliseconds to wait after
          * user interaction before hiding the system UI.
          */
         private val AUTO_HIDE_DELAY_MILLIS = 3000
@@ -138,5 +166,32 @@ class FullscreenActivity : AppCompatActivity() {
          * and a change of the status and navigation bar.
          */
         private val UI_ANIMATION_DELAY = 300
+    }
+
+    private inner class RotationEventListener : SensorEventListener {
+        override fun onAccuracyChanged(s: Sensor?, a: Int) {}
+        override fun onSensorChanged(event: SensorEvent) {
+            val (x, y, z, w) = event.values
+            val quaternion = floatArrayOf(w, x, y, z)
+
+            // the android os assumes our original device rotation to be laid down flat on the ground, facing the
+            // geomagnetic north pole; we position our ears on the top left corner and top right corner of this phone
+            val origin = arrayOf(
+                    floatArrayOf(-0.1f, 1.0f, 0.0f),
+                    floatArrayOf(0.1f, 1.0f, 0.0f)
+            )
+
+            // now we rotate the original ears by our device position
+            val ears = origin.map { ear -> Utils.rotateByQuaternion(quaternion, ear) }
+
+            // and calculate the angles between the ears and our sound position
+            val volume = ears.map { ear ->
+                val rad = Utils.radiansBetween(ear, soundPosition)
+                val misdirection = Math.abs(rad - Math.PI)
+                misdirection / Math.PI
+            }
+
+            mediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
+        }
     }
 }
