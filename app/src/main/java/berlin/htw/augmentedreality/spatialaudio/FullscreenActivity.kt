@@ -2,18 +2,17 @@ package berlin.htw.augmentedreality.spatialaudio
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.AssetFileDescriptor
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.MediaPlayer
-import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.view.View
+import com.github.nkzawa.socketio.client.IO
+import com.github.nkzawa.socketio.client.Socket
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -26,6 +25,7 @@ class FullscreenActivity : AppCompatActivity() {
     private var mVisible: Boolean = false
 
     private var mediaPlayer: MediaPlayer? = null
+    private var webSocket: Socket? = null
     private var rotationSensor: Sensor? = null
 
     /**
@@ -81,6 +81,10 @@ class FullscreenActivity : AppCompatActivity() {
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener)
+
+        // Connect to webSocket to send data to debug view
+        webSocket = IO.socket("http://192.168.0.101:3000")
+        webSocket!!.connect()
 
         // Initialize MediaPlayer
         mediaPlayer = MediaPlayer.create(this, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
@@ -184,6 +188,18 @@ class FullscreenActivity : AppCompatActivity() {
 
             // now we rotate the original ears by our device position
             val ears = origin.map { ear -> Utils.rotateByQuaternion(quaternion, ear) }
+
+            // send ear positions to debug server
+            webSocket?.let { webSocket ->
+                val jsonString = """
+                    {
+                        "ears": [${ears.map {
+                            "[${it.joinToString()}],"
+                        }}]
+                    }
+                    """
+                webSocket.emit("rotation", jsonString)
+            }
 
             val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
             
