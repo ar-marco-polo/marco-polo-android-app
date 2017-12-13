@@ -10,6 +10,7 @@ import android.media.MediaPlayer
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.View
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
@@ -19,6 +20,8 @@ import com.github.nkzawa.socketio.client.Socket
  * status bar and navigation/system bar) with user interaction.
  */
 class FullscreenActivity : AppCompatActivity() {
+
+    val SERVER_URL = "http://141.45.208.185:3000"
 
     private var mContentView: View? = null
     private var mControlsView: View? = null
@@ -83,7 +86,17 @@ class FullscreenActivity : AppCompatActivity() {
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener)
 
         // Connect to webSocket to send data to debug view
-        webSocket = IO.socket("http://192.168.0.101:3000")
+        webSocket = IO.socket(SERVER_URL)
+        webSocket!!
+            .on(Socket.EVENT_CONNECT_ERROR, { e ->
+                Log.e("SOCKET", "Connection error %s".format(e))
+            })
+            .on(Socket.EVENT_CONNECT_TIMEOUT, { e ->
+                Log.e("SOCKET", "Connection timeout %s".format(e))
+            })
+            .on(Socket.EVENT_CONNECT, { e ->
+                Log.d("SOCKET", "Connection established %s".format(e))
+            })
         webSocket!!.connect()
 
         // Initialize MediaPlayer
@@ -194,8 +207,8 @@ class FullscreenActivity : AppCompatActivity() {
                 val jsonString = """
                     {
                         "ears": [${ears.map {
-                            "[${it.joinToString()}],"
-                        }}]
+                            "[${it.joinToString(",")}]"
+                        }.joinToString(",")}]
                     }
                     """
                 webSocket.emit("rotation", jsonString)
