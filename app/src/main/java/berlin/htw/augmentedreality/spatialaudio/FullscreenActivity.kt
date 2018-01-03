@@ -14,6 +14,17 @@ import android.util.Log
 import android.view.View
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
+import android.content.IntentSender
+import com.google.android.gms.common.api.ResolvableApiException
+import android.support.annotation.NonNull
+import com.google.android.gms.location.*
+import com.google.android.gms.tasks.OnFailureListener
+import com.google.android.gms.tasks.OnSuccessListener
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.tasks.Task
+
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -112,6 +123,49 @@ class FullscreenActivity : AppCompatActivity() {
         // rotation vector (= Accelerometer, Magnetometer, and Gyroscope)
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
+
+
+
+
+
+
+
+
+        val locationRequest = LocationRequest()
+        locationRequest.interval = 10000
+        locationRequest.fastestInterval = 5000
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult?) {
+                val t = locationResult
+            }
+        }
+
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
+        val client = LocationServices.getSettingsClient(this)
+        val task = client.checkLocationSettings(builder.build())
+
+        task.addOnSuccessListener(this) { locationSettingsResponse ->
+            val mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+            mFusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
+        }
+
+
+        task.addOnFailureListener(this) { e ->
+            if (e is ResolvableApiException) {
+                // Location settings are not satisfied, but this can be fixed
+                // by showing the user a dialog.
+                try {
+                    // Show the dialog by calling startResolutionForResult(),
+                    // and check the result in onActivityResult().
+                    e.startResolutionForResult(this@MainActivity, REQUEST_CHECK_SETTINGS)
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    // Ignore the error.
+                }
+
+            }
+        }
     }
 
     // position sound at the north pole
