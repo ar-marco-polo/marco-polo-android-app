@@ -2,6 +2,7 @@ package berlin.htw.augmentedreality.spatialaudio
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -14,17 +15,7 @@ import android.util.Log
 import android.view.View
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
-import android.content.IntentSender
-import com.google.android.gms.common.api.ResolvableApiException
-import android.support.annotation.NonNull
-import com.google.android.gms.location.*
-import com.google.android.gms.tasks.OnFailureListener
-import com.google.android.gms.tasks.OnSuccessListener
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationSettingsRequest
-import com.google.android.gms.tasks.Task
-
+import android.content.pm.PackageManager
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -124,48 +115,7 @@ class FullscreenActivity : AppCompatActivity() {
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
-
-
-
-
-
-
-
-        val locationRequest = LocationRequest()
-        locationRequest.interval = 10000
-        locationRequest.fastestInterval = 5000
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-
-        val locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult?) {
-                val t = locationResult
-            }
-        }
-
-        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-        val client = LocationServices.getSettingsClient(this)
-        val task = client.checkLocationSettings(builder.build())
-
-        task.addOnSuccessListener(this) { locationSettingsResponse ->
-            val mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-            mFusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
-        }
-
-
-        task.addOnFailureListener(this) { e ->
-            if (e is ResolvableApiException) {
-                // Location settings are not satisfied, but this can be fixed
-                // by showing the user a dialog.
-                try {
-                    // Show the dialog by calling startResolutionForResult(),
-                    // and check the result in onActivityResult().
-                    e.startResolutionForResult(this@MainActivity, REQUEST_CHECK_SETTINGS)
-                } catch (sendEx: IntentSender.SendIntentException) {
-                    // Ignore the error.
-                }
-
-            }
-        }
+        LocationUtils.checkLocationSettings(this)
     }
 
     // position sound at the north pole
@@ -178,6 +128,27 @@ class FullscreenActivity : AppCompatActivity() {
         // created, to briefly hint to the user that UI controls
         // are available.
         delayedHide(100)
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when (requestCode) {
+            LocationUtils.LOCATION_REQUEST_CODE -> {
+                LocationUtils.setupLocationListener(this)
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            LocationUtils.ACCESS_FINE_LOCATION_PERMISSIONS_REQUEST -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    LocationUtils.setupLocationListener(this)
+                }
+            }
+        }
     }
 
     private fun toggle() {
