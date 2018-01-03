@@ -2,6 +2,7 @@ package berlin.htw.augmentedreality.spatialaudio
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -14,6 +15,7 @@ import android.util.Log
 import android.view.View
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
+import android.content.pm.PackageManager
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -112,6 +114,8 @@ class FullscreenActivity : AppCompatActivity() {
         // rotation vector (= Accelerometer, Magnetometer, and Gyroscope)
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
+
+        LocationUtils.checkLocationSettings(this)
     }
 
     // position sound at the north pole
@@ -124,6 +128,27 @@ class FullscreenActivity : AppCompatActivity() {
         // created, to briefly hint to the user that UI controls
         // are available.
         delayedHide(100)
+    }
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        when (requestCode) {
+            LocationUtils.LOCATION_REQUEST_CODE -> {
+                LocationUtils.setupLocationListener(this)
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            LocationUtils.ACCESS_FINE_LOCATION_PERMISSIONS_REQUEST -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    LocationUtils.setupLocationListener(this)
+                }
+            }
+        }
     }
 
     private fun toggle() {
