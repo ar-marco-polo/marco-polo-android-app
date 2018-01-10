@@ -21,7 +21,7 @@ object LocationUtils {
         return locationRequest
     }
 
-    fun checkLocationSettings(activity: Activity) {
+    fun checkLocationSettings(activity: FullscreenActivity) {
         val locationRequest = getLocationRequest()
 
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
@@ -61,6 +61,7 @@ object LocationUtils {
 
         val locationCallback = object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
+                val locationResult = locationResult ?: return
                 activity.ownLocation = locationResult.lastLocation
             }
         }
