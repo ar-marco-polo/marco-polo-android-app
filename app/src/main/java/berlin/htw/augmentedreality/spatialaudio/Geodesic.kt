@@ -1,6 +1,5 @@
 package berlin.htw.augmentedreality.spatialaudio
 
-// algorithms taken from https://www.sunearthtools.com/tools/distance.php
 object Geodesic {
     val EARTH_RADIUS_KM = 6372.795477598
 
@@ -8,6 +7,7 @@ object Geodesic {
 
     /**
      * Returns distance between a and b in kilometers
+     * algorithm taken from https://www.sunearthtools.com/tools/distance.php
      *
      * @param a     Array of length 2 with latitude and longitude
      * @param b     Array of length 2 with latitude and longitude
@@ -15,9 +15,9 @@ object Geodesic {
     fun distanceBetween (a: DoubleArray, b: DoubleArray) =
             EARTH_RADIUS_KM * Math.acos(Math.sin(a[0] * TO_RAD) * Math.sin(b[0] * TO_RAD) + Math.cos(a[0] * TO_RAD) * Math.cos(b[0] * TO_RAD) * Math.cos(a[1] * TO_RAD - b[1] * TO_RAD))
 
-    // from: https://gis.stackexchange.com/questions/79633/how-to-determine-vector-between-two-lat-lon-points
     /**
      * Returns an angle between -PI and PI, where 0 is the north pole and the angle turns counterclockwise
+     * algorithm taken from http://www.movable-type.co.uk/scripts/latlong.html
      *
      * @param from  Array of length 2 with latitude and longitude
      * @param to    Array of length 2 with latitude and longitude
@@ -31,7 +31,10 @@ object Geodesic {
     }
 
     /**
-     * Returns am Array of length 3 in the Vector Space of the device
+     * Returns am Array of length 3 which indicates the direction to another position
+     * in the Vector Space of the device
+     *
+     * @param bearing the bearing or azimuth between two positions
      */
     fun bearingToVector3(bearing: Double): FloatArray {
         return floatArrayOf(
