@@ -19,6 +19,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import berlin.htw.augmentedreality.spatialaudio.Geodesic.bearing
 import berlin.htw.augmentedreality.spatialaudio.Geodesic.bearingToVector3
+import berlin.htw.augmentedreality.spatialaudio.Geodesic.distanceBetween
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -245,17 +246,20 @@ class FullscreenActivity : AppCompatActivity() {
             }
 
             val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
+            val maxDistanceKm = 5
 
-            val locationOfOtherPlayer = doubleArrayOf(52.520645, 13.409779) // Fernsehturm Berlin
+            val locationOfOtherPlayer = doubleArrayOf(52.520709, 13.409429) // Fernsehturm Berlin
             val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
             val directionToOtherPlayer = bearing(ownLocationArray, locationOfOtherPlayer)
+            val distanceToOtherPlayer = distanceBetween(ownLocationArray, locationOfOtherPlayer)
             val vectorToOtherPlayer = bearingToVector3(directionToOtherPlayer)
+            val distanceFactor = (maxDistanceKm - distanceToOtherPlayer) / maxDistanceKm
 
             // and calculate the angles between the ears and our sound position
             val volume = ears.map { ear ->
                 val rad = Utils.radiansBetween(ear, vectorToOtherPlayer)
                 // rad is in range of [0, PI] audioCurve returns 0 above PI / 2
-                audioCurve(rad)
+                distanceFactor * audioCurve(rad)
             }
 
             mediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
