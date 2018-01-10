@@ -16,6 +16,9 @@ import android.view.View
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
 import android.content.pm.PackageManager
+import android.location.Location
+import berlin.htw.augmentedreality.spatialaudio.Geodesic.direction
+import berlin.htw.augmentedreality.spatialaudio.Geodesic.directionToVector3
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -24,6 +27,9 @@ import android.content.pm.PackageManager
 class FullscreenActivity : AppCompatActivity() {
 
     val SERVER_URL = "http://141.45.208.185:3000"
+
+    var ownLocation: Location? = null
+    var locationOfOtherPlayer = Location("")
 
     private var mContentView: View? = null
     private var mControlsView: View? = null
@@ -118,9 +124,6 @@ class FullscreenActivity : AppCompatActivity() {
         LocationUtils.checkLocationSettings(this)
     }
 
-    // position sound at the north pole
-    private val soundPosition = floatArrayOf(0.0f, 1.0f, 0.0f)
-
     override fun onPostCreate(savedInstanceState: Bundle?) {
         super.onPostCreate(savedInstanceState)
 
@@ -214,6 +217,9 @@ class FullscreenActivity : AppCompatActivity() {
     private inner class RotationEventListener : SensorEventListener {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(event: SensorEvent) {
+            // make shure we have our location otherwise do nothing
+            val ownLocation = ownLocation ?: return
+
             val (x, y, z, w) = event.values
             val quaternion = floatArrayOf(w, x, y, z)
 
@@ -240,10 +246,16 @@ class FullscreenActivity : AppCompatActivity() {
             }
 
             val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
+
+            locationOfOtherPlayer.latitude = 52.520645
+            locationOfOtherPlayer.longitude = 13.409779
+            
+            val directionToOtherPlayer = direction(ownLocation, locationOfOtherPlayer)
+            val vectorToOtherPlayer = directionToVector3(directionToOtherPlayer)
             
             // and calculate the angles between the ears and our sound position
             val volume = ears.map { ear ->
-                val rad = Utils.radiansBetween(ear, soundPosition)
+                val rad = Utils.radiansBetween(ear, vectorToOtherPlayer)
                 // rad is in range of [0, PI] audioCurve returns 0 above PI / 2
                 audioCurve(rad)
             }

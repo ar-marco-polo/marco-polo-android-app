@@ -9,17 +9,9 @@ import android.content.pm.PackageManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 
-
-
 object LocationUtils {
     val LOCATION_REQUEST_CODE = 0
     val ACCESS_FINE_LOCATION_PERMISSIONS_REQUEST = 1
-
-    private val locationCallback = object: LocationCallback() {
-        override fun onLocationResult(locationResult: LocationResult?) {
-            val accuracy = locationResult.lastLocation.accuracy
-        }
-    }
 
     private fun getLocationRequest(): LocationRequest {
         val locationRequest = LocationRequest()
@@ -55,7 +47,7 @@ object LocationUtils {
         }
     }
 
-    fun setupLocationListener(activity: Activity) {
+    fun setupLocationListener(activity: FullscreenActivity) {
         // check if we have permission to access fine location
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -67,7 +59,13 @@ object LocationUtils {
 
         val locationRequest = getLocationRequest()
 
-        val mFusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
-        mFusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
+        val locationCallback = object: LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult?) {
+                activity.ownLocation = locationResult.lastLocation
+            }
+        }
+
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null /* Looper */)
     }
 }
