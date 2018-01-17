@@ -19,13 +19,13 @@ class FullscreenActivity : AppCompatActivity() {
         val action = intent.action
         if (Intent.ACTION_VIEW == action) {
             val data = intent.data
-            val gameId = data.getQueryParameter("g")
-            Game.joinGame(gameId) { success ->
-                Game.start()
+            val gameName = data.getQueryParameter("g")
+            Game.joinGame(gameName) { success ->
+                if (success) { Game.start() }
             }
         } else {
-            Game.createNewGame { gameID ->
-                if (gameID != null) {
+            Game.createNewGame { gameName ->
+                if (gameName != null) {
                     // TODO: invite other player
                     Game.start()
                 }

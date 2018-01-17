@@ -8,10 +8,12 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
 import android.media.MediaPlayer
+import android.util.Log
 import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpPost
-import java.util.*
+import com.github.nkzawa.socketio.client.IO
+import com.github.nkzawa.socketio.client.Socket
 
 object Game {
     data class Player (
@@ -24,39 +26,43 @@ object Game {
 
     private val BASE_URL = "http://192.168.0.106:3000"
 
+    private var name: String? = null
     private var activity: Activity? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
+    private var webSocket: Socket? = null
 
     fun setup(activity: Activity) {
         this.activity = activity
         FuelManager.instance.basePath = BASE_URL
     }
 
-    fun createNewGame(handler: (gameID: String?) -> Unit) {
+    fun createNewGame(handler: (gameName: String?) -> Unit) {
         "/games".httpPost().responseJson { _, _, result ->
             val (data, error) = result
             val json = data?.obj()
             val you = json?.getJSONObject("you")
-            val gameID = json?.getJSONObject("game")?.getString("name")
+            val gameName = json?.getJSONObject("game")?.getString("name")
             val id = you?.getString("id")
             val token = you?.getString("token")
 
-            if (error == null && gameID != null && id != null && token != null) {
+            if (error == null && gameName != null && id != null && token != null) {
                 player = Player(id, token)
-                handler(gameID)
+                name = gameName
+                handler(gameName)
             } else {
                 handler(null)
             }
         }
     }
 
-    fun joinGame(gameID: String?, handler: (success: Boolean) -> Unit) {
-        "/games/$gameID".httpPost().responseJson { _, _, result ->
+    fun joinGame(gameName: String?, handler: (success: Boolean) -> Unit) {
+        "/games/$gameName".httpPost().responseJson { _, _, result ->
             val (data, error) = result
             if (error == null) {
                 handler(true)
             } else {
+                name = gameName
                 handler(false)
             }
         }
@@ -65,6 +71,7 @@ object Game {
     fun start() {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
         val activity = activity ?: return
+        val gameName = name ?: return
 
         // Initialize MediaPlayer
         mediaPlayer = MediaPlayer.create(activity, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
@@ -79,6 +86,27 @@ object Game {
         // rotation vector (= Accelerometer, Magnetometer, and Gyroscope)
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
+
+        webSocket = connectSocket(gameName)
+    }
+
+    private fun connectSocket(gameName: String): Socket {
+        val socket = IO.socket("$BASE_URL/$gameName")
+        socket
+                .on(Socket.EVENT_CONNECT_ERROR, { e ->
+                    Log.e("SOCKET", "Connection error %s".format(e))
+                })
+                .on(Socket.EVENT_CONNECT_TIMEOUT, { e ->
+                    Log.e("SOCKET", "Connection timeout %s".format(e))
+                })
+                .on(Socket.EVENT_CONNECT, { e ->
+                    Log.d("SOCKET", "Connection established %s".format(e))
+                })
+                .on(Socket.EVENT_ERROR, { e ->
+                    Log.d("SOCKET", "Connection error %s".format(e))
+                })
+        socket.connect()
+        return  socket
     }
 
     private class RotationEventListener : SensorEventListener {
