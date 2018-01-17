@@ -9,11 +9,18 @@ class FullscreenActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // setContentView(R.layout.activity_fullscreen)
+        setContentView(R.layout.activity_fullscreen)
 
         // DebugUtils.setup()
-        AudioUtils.setup(this)
+        Game.setup(this)
         LocationUtils.setup(this)
+        Game.createNewGame { success ->
+            if (success) {
+                // TODO: invite other player
+                Game.start()
+            }
+        }
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

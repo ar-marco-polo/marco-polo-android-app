@@ -8,13 +8,51 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
 import android.media.MediaPlayer
+import com.github.kittinunf.fuel.android.extension.responseJson
+import com.github.kittinunf.fuel.core.FuelManager
+import com.github.kittinunf.fuel.httpPost
+import java.util.*
 
-object AudioUtils {
-    var ownLocation: Location? = null
+object Game {
+    data class Player (
+        val id: String,
+        val token: String?,
+        var location: Location? = null
+    )
+
+    var player: Player? = null
+
+    private val BASE_URL = "http://192.168.0.106:3000"
+
+    private var activity: Activity? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
 
     fun setup(activity: Activity) {
+        this.activity = activity
+        FuelManager.instance.basePath = BASE_URL
+    }
+
+    fun createNewGame(handler: (success: Boolean) -> Unit) {
+        "/games".httpPost().responseJson { _, _, result ->
+            val (data, error) = result
+            val you = data?.obj()?.getJSONObject("you")
+            val id = you?.getString("id")
+            val token = you?.getString("token")
+
+            if (error == null && id != null && token != null) {
+                player = Player(id, token)
+                handler(true)
+            } else {
+                handler(false)
+            }
+        }
+    }
+
+    fun start() {
+        // TODO: maybe we can throw here or something to let the user retry
+        val activity = activity ?: return
+
         // Initialize MediaPlayer
         mediaPlayer = MediaPlayer.create(activity, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
         mediaPlayer!!.setVolume(0.0f, 0.0f)
@@ -33,8 +71,9 @@ object AudioUtils {
     private class RotationEventListener : SensorEventListener {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(event: SensorEvent) {
-            // make shure we have our location otherwise do nothing
-            val ownLocation = ownLocation ?: return
+            // make shure game is set up with a player and a location
+            val player = player ?: return
+            val ownLocation = player.location ?: return
 
             val (x, y, z, w) = event.values
             val quaternion = floatArrayOf(w, x, y, z)

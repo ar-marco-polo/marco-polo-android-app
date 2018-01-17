@@ -15,14 +15,6 @@ object LocationUtils {
 
     private var activity: Activity? = null
 
-    private fun getLocationRequest(): LocationRequest {
-        val locationRequest = LocationRequest()
-        locationRequest.interval = 10000
-        locationRequest.fastestInterval = 5000
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        return locationRequest
-    }
-
     fun setup(activity: Activity) {
         this.activity = activity
 
@@ -51,6 +43,14 @@ object LocationUtils {
         }
     }
 
+    private fun getLocationRequest(): LocationRequest {
+        val locationRequest = LocationRequest()
+        locationRequest.interval = 10000
+        locationRequest.fastestInterval = 5000
+        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        return locationRequest
+    }
+
     fun setupLocationListener() {
         val activity = this.activity ?: return
         // check if we have permission to access fine location
@@ -67,7 +67,7 @@ object LocationUtils {
         val locationCallback = object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 val locationResult = locationResult ?: return
-                AudioUtils.ownLocation = locationResult.lastLocation
+                Game.player?.location = locationResult.lastLocation
             }
         }
 
