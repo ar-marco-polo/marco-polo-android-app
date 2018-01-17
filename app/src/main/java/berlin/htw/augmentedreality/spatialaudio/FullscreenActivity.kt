@@ -14,13 +14,23 @@ class FullscreenActivity : AppCompatActivity() {
         // DebugUtils.setup()
         Game.setup(this)
         LocationUtils.setup(this)
-        Game.createNewGame { success ->
-            if (success) {
-                // TODO: invite other player
+
+        val intent = intent
+        val action = intent.action
+        if (Intent.ACTION_VIEW == action) {
+            val data = intent.data
+            val gameId = data.getQueryParameter("g")
+            Game.joinGame(gameId) { success ->
                 Game.start()
             }
+        } else {
+            Game.createNewGame { gameID ->
+                if (gameID != null) {
+                    // TODO: invite other player
+                    Game.start()
+                }
+            }
         }
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

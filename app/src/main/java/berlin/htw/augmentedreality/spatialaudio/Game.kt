@@ -33,15 +33,28 @@ object Game {
         FuelManager.instance.basePath = BASE_URL
     }
 
-    fun createNewGame(handler: (success: Boolean) -> Unit) {
+    fun createNewGame(handler: (gameID: String?) -> Unit) {
         "/games".httpPost().responseJson { _, _, result ->
             val (data, error) = result
-            val you = data?.obj()?.getJSONObject("you")
+            val json = data?.obj()
+            val you = json?.getJSONObject("you")
+            val gameID = json?.getJSONObject("game")?.getString("name")
             val id = you?.getString("id")
             val token = you?.getString("token")
 
-            if (error == null && id != null && token != null) {
+            if (error == null && gameID != null && id != null && token != null) {
                 player = Player(id, token)
+                handler(gameID)
+            } else {
+                handler(null)
+            }
+        }
+    }
+
+    fun joinGame(gameID: String?, handler: (success: Boolean) -> Unit) {
+        "/games/$gameID".httpPost().responseJson { _, _, result ->
+            val (data, error) = result
+            if (error == null) {
                 handler(true)
             } else {
                 handler(false)
@@ -50,7 +63,7 @@ object Game {
     }
 
     fun start() {
-        // TODO: maybe we can throw here or something to let the user retry
+        // TODO: maybe we can throw here or something to let the user retry when activity is missing
         val activity = activity ?: return
 
         // Initialize MediaPlayer
@@ -72,8 +85,7 @@ object Game {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(event: SensorEvent) {
             // make shure game is set up with a player and a location
-            val player = player ?: return
-            val ownLocation = player.location ?: return
+            val ownLocation = player?.location ?: return
 
             val (x, y, z, w) = event.values
             val quaternion = floatArrayOf(w, x, y, z)
