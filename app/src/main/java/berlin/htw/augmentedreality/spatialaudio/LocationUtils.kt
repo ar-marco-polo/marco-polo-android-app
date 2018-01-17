@@ -67,7 +67,7 @@ object LocationUtils {
         val locationCallback = object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 val locationResult = locationResult ?: return
-                Game.player?.location = locationResult.lastLocation
+                Game.handleMovement(locationResult.lastLocation)
             }
         }
 

@@ -88,6 +88,24 @@ object Game {
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         webSocket = connectSocket(gameName)
+        webSocket!!.on("status", { status ->
+        })
+    }
+
+    fun handleMovement(location: Location) {
+        val player = player ?: return
+        val token = player.token ?: return
+        val websocket = webSocket ?: return
+
+        player.location = location
+        val jsonString = """
+                    {
+                        "id": "${player.id}",
+                        "token": "$token",
+                        "position": [${location.latitude}, ${location.longitude}]
+                    }
+                    """
+        websocket.emit("movement", jsonString)
     }
 
     private fun connectSocket(gameName: String): Socket {
@@ -103,7 +121,7 @@ object Game {
                     Log.d("SOCKET", "Connection established %s".format(e))
                 })
                 .on(Socket.EVENT_ERROR, { e ->
-                    Log.d("SOCKET", "Connection error %s".format(e))
+                    Log.e("SOCKET", "Connection error %s".format(e))
                 })
         socket.connect()
         return  socket
