@@ -1,6 +1,6 @@
 package berlin.htw.augmentedreality.spatialaudio
 
-object Utils {
+object VectorUtils {
     /**
      * Each quaternion [q] and [r] is expected to be an array of (w, x, y, z)
      */

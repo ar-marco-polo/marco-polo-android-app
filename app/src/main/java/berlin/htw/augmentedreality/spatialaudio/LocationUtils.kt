@@ -13,6 +13,8 @@ object LocationUtils {
     val LOCATION_REQUEST_CODE = 0
     val ACCESS_FINE_LOCATION_PERMISSIONS_REQUEST = 1
 
+    private var activity: Activity? = null
+
     private fun getLocationRequest(): LocationRequest {
         val locationRequest = LocationRequest()
         locationRequest.interval = 10000
@@ -21,7 +23,9 @@ object LocationUtils {
         return locationRequest
     }
 
-    fun checkLocationSettings(activity: FullscreenActivity) {
+    fun setup(activity: Activity) {
+        this.activity = activity
+
         val locationRequest = getLocationRequest()
 
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
@@ -29,7 +33,7 @@ object LocationUtils {
         val task = client.checkLocationSettings(builder.build())
 
         task.addOnSuccessListener(activity) { _ ->
-            setupLocationListener(activity)
+            setupLocationListener()
         }
 
         task.addOnFailureListener(activity) { e ->
@@ -47,7 +51,8 @@ object LocationUtils {
         }
     }
 
-    fun setupLocationListener(activity: FullscreenActivity) {
+    fun setupLocationListener() {
+        val activity = this.activity ?: return
         // check if we have permission to access fine location
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -62,7 +67,7 @@ object LocationUtils {
         val locationCallback = object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 val locationResult = locationResult ?: return
-                activity.ownLocation = locationResult.lastLocation
+                AudioUtils.ownLocation = locationResult.lastLocation
             }
         }
 
