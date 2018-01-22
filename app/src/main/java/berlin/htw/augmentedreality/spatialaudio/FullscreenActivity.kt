@@ -4,8 +4,13 @@ import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.util.Log
 
 class FullscreenActivity : AppCompatActivity() {
+
+    val TAG = "FULLSCREEN_ACTIVITY"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -15,17 +20,8 @@ class FullscreenActivity : AppCompatActivity() {
         Game.setup(this)
         LocationUtils.setup(this)
 
-        val intent = intent
-        val action = intent.action
-        if (Intent.ACTION_VIEW == action) {
-            // app was started from invitation link to join an exiting game
-            val data = intent.data
-            val gameName = data.getQueryParameter("g")
-            Game.joinGame(gameName) { success ->
-                if (success) { Game.start() }
-            }
-        } else {
-            // normal app start
+        findViewById(R.id.game_creation_button).setOnClickListener {
+            Log.d(TAG, "Clicked game creation button")
             Game.createNewGame { gameName ->
                 if (gameName != null) {
                     Game.start()
@@ -37,9 +33,18 @@ class FullscreenActivity : AppCompatActivity() {
                     sendIntent.putExtra(Intent.EXTRA_TEXT, invitationLink)
                     sendIntent.type = "text/plain"
                     startActivity(sendIntent)
+                } else {
+                    // TODO: show error
                 }
             }
         }
+
+        checkForJoinIntent()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkForJoinIntent()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -56,6 +61,17 @@ class FullscreenActivity : AppCompatActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     LocationUtils.setupLocationListener()
                 }
+            }
+        }
+    }
+
+    fun checkForJoinIntent () {
+        if (intent.action == Intent.ACTION_VIEW) {
+            // app was started from invitation link to join an exiting game
+            val data = intent.data
+            val gameName = data.getQueryParameter("g")
+            Game.joinGame(gameName) { success ->
+                if (success) { Game.start() }
             }
         }
     }

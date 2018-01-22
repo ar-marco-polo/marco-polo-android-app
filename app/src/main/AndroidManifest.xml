@@ -22,8 +22,10 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="https"
-                      android:host="192.168.0.106" />
+                <data android:scheme="http"
+                      android:host="192.168.0.106"
+                      android:port="3000"
+                      android:path="/join" />
             </intent-filter>
         </activity>
     </application>

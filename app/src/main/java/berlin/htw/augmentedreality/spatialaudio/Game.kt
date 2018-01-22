@@ -59,10 +59,16 @@ object Game {
     fun joinGame(gameName: String?, handler: (success: Boolean) -> Unit) {
         "/games/$gameName".httpPost().responseJson { _, _, result ->
             val (data, error) = result
-            if (error == null) {
+            val json = data?.obj()
+            val you = json?.getJSONObject("you")
+            val id = you?.getString("id")
+            val token = you?.getString("token")
+
+            if (error == null && id != null && token != null) {
+                name = gameName
+                player = Player(id, token)
                 handler(true)
             } else {
-                name = gameName
                 handler(false)
             }
         }
@@ -71,6 +77,8 @@ object Game {
     fun start() {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
         val activity = activity ?: return
+        val player = player ?: return
+        val token = player.token ?: return
         val gameName = name ?: return
 
         // Initialize MediaPlayer
@@ -87,29 +95,27 @@ object Game {
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
-        webSocket = connectSocket(gameName)
+        webSocket = connectSocket(gameName, player.id, token)
         webSocket!!.on("status", { status ->
+            print(status)
         })
     }
 
     fun handleMovement(location: Location) {
         val player = player ?: return
-        val token = player.token ?: return
-        val websocket = webSocket ?: return
+        val webSocket = webSocket ?: return
 
         player.location = location
         val jsonString = """
                     {
-                        "id": "${player.id}",
-                        "token": "$token",
                         "position": [${location.latitude}, ${location.longitude}]
                     }
                     """
-        websocket.emit("movement", jsonString)
+        webSocket.emit("movement", jsonString)
     }
 
-    private fun connectSocket(gameName: String): Socket {
-        val socket = IO.socket("$BASE_URL/$gameName")
+    private fun connectSocket(gameName: String, playerId: String, token: String): Socket {
+        val socket = IO.socket("$BASE_URL")
         socket
                 .on(Socket.EVENT_CONNECT_ERROR, { e ->
                     Log.e("SOCKET", "Connection error %s".format(e))
@@ -117,11 +123,18 @@ object Game {
                 .on(Socket.EVENT_CONNECT_TIMEOUT, { e ->
                     Log.e("SOCKET", "Connection timeout %s".format(e))
                 })
-                .on(Socket.EVENT_CONNECT, { e ->
-                    Log.d("SOCKET", "Connection established %s".format(e))
-                })
                 .on(Socket.EVENT_ERROR, { e ->
                     Log.e("SOCKET", "Connection error %s".format(e))
+                })
+                .on(Socket.EVENT_CONNECT, { _ ->
+                    val authString = """
+                        {
+                            "gameName": "$gameName",
+                            "id": "$playerId",
+                            "token": "$token"
+                        }
+                    """
+                    socket.emit("auth", authString)
                 })
         socket.connect()
         return  socket
