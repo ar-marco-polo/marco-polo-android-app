@@ -18,16 +18,25 @@ class FullscreenActivity : AppCompatActivity() {
         val intent = intent
         val action = intent.action
         if (Intent.ACTION_VIEW == action) {
+            // app was started from invitation link to join an exiting game
             val data = intent.data
             val gameName = data.getQueryParameter("g")
             Game.joinGame(gameName) { success ->
                 if (success) { Game.start() }
             }
         } else {
+            // normal app start
             Game.createNewGame { gameName ->
                 if (gameName != null) {
-                    // TODO: invite other player
                     Game.start()
+
+                    // show share dialog to invite other player
+                    val sendIntent = Intent()
+                    val invitationLink = "${Game.BASE_URL}/join?g=$gameName"
+                    sendIntent.action = Intent.ACTION_SEND
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, invitationLink)
+                    sendIntent.type = "text/plain"
+                    startActivity(sendIntent)
                 }
             }
         }

@@ -23,7 +23,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:scheme="https"
-                      android:host="game.ar-audio.de" />
+                      android:host="192.168.0.106" />
             </intent-filter>
         </activity>
     </application>

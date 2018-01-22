@@ -24,7 +24,7 @@ object Game {
 
     var player: Player? = null
 
-    private val BASE_URL = "http://192.168.0.106:3000"
+    val BASE_URL = "http://192.168.0.106:3000"
 
     private var name: String? = null
     private var activity: Activity? = null
