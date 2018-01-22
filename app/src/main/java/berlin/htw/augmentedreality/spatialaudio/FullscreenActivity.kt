@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
+import com.fasterxml.jackson.core.JsonFactory
 
 class FullscreenActivity : AppCompatActivity() {
 

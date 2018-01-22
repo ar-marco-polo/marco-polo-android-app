@@ -1,5 +1,6 @@
 package berlin.htw.augmentedreality.spatialaudio
 
+import com.fasterxml.jackson.module.kotlin.*
 import android.app.Activity
 import android.content.Context
 import android.hardware.Sensor
@@ -9,6 +10,9 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.media.MediaPlayer
 import android.util.Log
+import berlin.htw.augmentedreality.spatialaudio.messages.Authentication
+import berlin.htw.augmentedreality.spatialaudio.messages.Movement
+import com.fasterxml.jackson.core.JsonFactory
 import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpPost
@@ -21,6 +25,8 @@ object Game {
         val token: String?,
         var location: Location? = null
     )
+
+    val jsonFactory = JsonFactory()
 
     var player: Player? = null
 
@@ -106,12 +112,11 @@ object Game {
         val webSocket = webSocket ?: return
 
         player.location = location
-        val jsonString = """
-                    {
-                        "position": [${location.latitude}, ${location.longitude}]
-                    }
-                    """
-        webSocket.emit("movement", jsonString)
+        val JSON = jacksonObjectMapper()
+        val movement = Movement(
+                doubleArrayOf(location.latitude, location.longitude).toTypedArray()
+        )
+        webSocket.emit("movement", JSON.writeValueAsBytes(movement))
     }
 
     private fun connectSocket(gameName: String, playerId: String, token: String): Socket {
@@ -127,14 +132,9 @@ object Game {
                     Log.e("SOCKET", "Connection error %s".format(e))
                 })
                 .on(Socket.EVENT_CONNECT, { _ ->
-                    val authString = """
-                        {
-                            "gameName": "$gameName",
-                            "id": "$playerId",
-                            "token": "$token"
-                        }
-                    """
-                    socket.emit("auth", authString)
+                    val JSON = jacksonObjectMapper()
+                    val authentication = Authentication(gameName, playerId, token)
+                    socket.emit("auth", JSON.writeValueAsBytes(authentication))
                 })
         socket.connect()
         return  socket
