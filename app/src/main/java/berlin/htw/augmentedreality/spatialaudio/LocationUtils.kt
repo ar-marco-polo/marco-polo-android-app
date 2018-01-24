@@ -17,7 +17,7 @@ object LocationUtils {
     private var activity: Activity? = null
 
     fun setup(activity: Activity) {
-        if (activity != null) return
+        if (this.activity != null) return
         this.activity = activity
 
         val locationRequest = getLocationRequest()

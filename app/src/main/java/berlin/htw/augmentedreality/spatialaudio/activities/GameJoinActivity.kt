@@ -12,18 +12,12 @@ class GameJoinActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.dummy)
 
-        checkForJoinIntent()
-    }
-
-    fun checkForJoinIntent () {
-        if (intent.action == Intent.ACTION_VIEW) {
-            // app was started from invitation link to join an exiting game
-            val data = intent.data
-            val gameName = data.getQueryParameter("g")
-            Game.joinGame(gameName) { success ->
-                if (success) {
-                    Game.start()
-                }
+        // app was started from invitation link to join an exiting game
+        val data = intent.data
+        val gameName = data.pathSegments.last()
+        Game.joinGame(gameName) { success ->
+            if (success) {
+                Game.start()
             }
         }
     }

@@ -26,11 +26,10 @@ object Game {
         var location: Location? = null
     )
 
-    val jsonFactory = JsonFactory()
+    
 
-    var player: Player? = null
 
-    val BASE_URL = "http://192.168.0.106:3000"
+    val BASE_URL = "http://192.168.0.4:3000"
 
     private var name: String? = null
     private var activity: Activity? = null
@@ -38,8 +37,8 @@ object Game {
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
-    fun setup(activity: Context) {
-        if (activity != null) return
+    fun setup(activity: Activity) {
+        if (this.activity != null) return
         this.activity = activity
         FuelManager.instance.basePath = BASE_URL
     }
