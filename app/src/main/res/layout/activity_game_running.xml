@@ -13,23 +13,25 @@
             android:gravity="center"
             android:layout_alignParentStart="true">
         <TextView
+                android:id="@+id/game_running__explanation_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:textColor="#eee"
                 android:textSize="18dp"
-                android:layout_marginBottom="6dp"
-                android:text="You should be hiding!\nYour fried is looking for you." />
+                android:layout_marginBottom="6dp" />
         <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
             <Button
-                    android:text="I was found!"
+                    android:id="@+id/game_running__was_found_button"
+                    android:text="@string/game_running_game_over_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             <Button
-                    android:text="This is boring"
+                    android:id="@+id/game_running__abort_game_button"
+                    android:text="@string/game_running_abort_game_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
         </LinearLayout>

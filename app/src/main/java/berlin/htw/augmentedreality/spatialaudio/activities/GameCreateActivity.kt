@@ -11,7 +11,7 @@ import berlin.htw.augmentedreality.spatialaudio.R
 
 class GameCreateActivity : BaseActivity() {
 
-    val TAG = "GAME_CREATE_ACTIVITY"
+    private val tag = "GAME_CREATE_ACTIVITY"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,7 +19,7 @@ class GameCreateActivity : BaseActivity() {
         setContentView(R.layout.activity_game_create)
 
         findViewById(R.id.game_creation_button).setOnClickListener {
-            Log.d(TAG, "Clicked game creation button")
+            Log.d(tag, "Clicked game creation button")
             Game.createNewGame { game ->
                 if (game != null) {
                     Game.start()
