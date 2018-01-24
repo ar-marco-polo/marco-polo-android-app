@@ -1,5 +1,6 @@
 package berlin.htw.augmentedreality.spatialaudio.activities
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -54,5 +55,9 @@ class GameRunningActivity : BaseActivity() {
 
     fun abortGame() {
         Log.d(tag, "Clicked abort button")
+        val createNewGame = Intent(this, GameCreateActivity::class.java)
+        createNewGame.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME
+        startActivity(createNewGame)
+        finish()
     }
 }
