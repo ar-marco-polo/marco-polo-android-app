@@ -43,7 +43,7 @@
                 android:gravity="center"
                 android:textColor="#eee"
                 android:textSize="14dp"
-                android:text="Current Accuracy: X meters"
+                android:text="@string/game_running_location_accuracy_label"
                 android:layout_marginBottom="6dp" />
     </LinearLayout>
 </RelativeLayout>

@@ -7,4 +7,5 @@
     <string name="game_running_abort_game_label">This is boring</string>
     <string name="game_running_seeker_text">Go! Find your friend \n using your directional microphone.</string>
     <string name="game_running_hider_text">You should be hiding! \n Your friend is looking for you.</string>
+    <string name="game_running_location_accuracy_label">Current location accuracy: %.1f meters</string>
 </resources>
