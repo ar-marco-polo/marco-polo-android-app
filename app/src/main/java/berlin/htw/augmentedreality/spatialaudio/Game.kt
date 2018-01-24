@@ -10,8 +10,7 @@ import android.location.Location
 import android.media.MediaPlayer
 import android.util.Log
 import berlin.htw.augmentedreality.spatialaudio.messages.Authentication
-import berlin.htw.augmentedreality.spatialaudio.messages.Movement
-import berlin.htw.augmentedreality.spatialaudio.messages.Status
+import berlin.htw.augmentedreality.spatialaudio.messages.PlayerLocation
 import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpPost
@@ -36,11 +35,11 @@ object Game {
     sealed class GameUpdateEvent {
         companion object : Event<GameUpdateEvent>()
 
-        class Movement(val location: Location) : GameUpdateEvent() {
+        class OwnLocationChanged(val location: Location) : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
 
-        class Status(val data: berlin.htw.augmentedreality.spatialaudio.messages.Status) : GameUpdateEvent() {
+        class OtherLocationChanged(val playerLocation: PlayerLocation) : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
     }
@@ -116,41 +115,42 @@ object Game {
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         webSocket = connectSocket(game.name, game.me.id, token)
-        webSocket!!.on("status", { args ->
+        webSocket!!.on("location", { args ->
             val json = (args[0] as JSONObject).toString()
             val JSON = jacksonObjectMapper()
-            val status: Status = JSON.readValue(json)
-            handleStatusUpdate(status)
+            val status: PlayerLocation = JSON.readValue(json)
+            handleOtherLocationChange(status)
         })
     }
 
-    fun handleStatusUpdate(status: Status) {
+    fun handleOtherLocationChange(playerLocation: PlayerLocation) {
         val game = game ?: return
 
         val location = Location("spatial-audio")
-        location.latitude = status.position[0]
-        location.longitude = status.position[1]
+        location.latitude = playerLocation.latitude
+        location.longitude = playerLocation.longitude
+        location.accuracy = playerLocation.accuracy
 
         if (game.other == null) {
-            game.other = Player(status.id, null, !amISeeking(), location)
+            game.other = Player(playerLocation.playerId!!, null, !amISeeking(), location)
         } else {
             // TODO: check if player id matches
             game.other?.location = location
         }
 
-        GameUpdateEvent.Status(status).emit()
+        GameUpdateEvent.OtherLocationChanged(playerLocation).emit()
     }
 
-    fun handleMovement(location: Location) {
+    fun handleOwnLocationChnage(location: Location) {
         val game = game ?: return
         val webSocket = webSocket ?: return
 
         game.me.location = location
         val JSON = jacksonObjectMapper()
-        val movement = Movement(location)
-        webSocket.emit("movement", JSON.writeValueAsBytes(movement))
+        val movement = PlayerLocation(location)
+        webSocket.emit("location", JSON.writeValueAsBytes(movement))
 
-        GameUpdateEvent.Movement(location).emit()
+        GameUpdateEvent.OwnLocationChanged(location).emit()
     }
 
     private fun connectSocket(gameName: String, playerId: String, token: String): Socket {

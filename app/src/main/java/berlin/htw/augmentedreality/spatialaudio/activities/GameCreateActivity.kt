@@ -38,7 +38,7 @@ class GameCreateActivity : BaseActivity() {
         }
 
         Game.GameUpdateEvent on {
-            when (it) { is Game.GameUpdateEvent.Status -> {
+            when (it) { is Game.GameUpdateEvent.OtherLocationChanged -> {
                     val startGameIntent = Intent(this, GameRunningActivity::class.java)
                     this.startActivity(startGameIntent)
                     this.finish()
