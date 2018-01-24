@@ -1,8 +1,14 @@
 <resources>
-    <string name="app_name">Spatial-Audio</string>
+    <string name="app_name">Marco Polo</string>
 
-    <string name="game_creation_label">Create Game</string>
+    <!-- game creation screen -->
+    <string name="game_create_button_label">Create Game</string>
+    <string name="game_create_game_explanation_label">Invite another player to start a game.</string>
 
+    <!-- join game screen -->
+    <string name="game_join_button_label">I\'m ready</string>
+
+    <!-- game in progress screen -->
     <string name="game_running_game_over_label">I was found!</string>
     <string name="game_running_abort_game_label">This is boring</string>
     <string name="game_running_seeker_text">Go! Find your friend \n using your directional microphone.</string>
