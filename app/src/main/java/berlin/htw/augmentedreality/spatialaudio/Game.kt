@@ -12,18 +12,17 @@ import android.media.MediaPlayer
 import android.util.Log
 import berlin.htw.augmentedreality.spatialaudio.messages.Authentication
 import berlin.htw.augmentedreality.spatialaudio.messages.Movement
-import com.fasterxml.jackson.core.JsonFactory
 import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpPost
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
-import org.json.JSONObject
 
 object Game {
     data class Player (
         val id: String,
         val token: String?,
+        val isSeeking: Boolean,
         var location: Location? = null
     )
 
@@ -52,14 +51,15 @@ object Game {
 
         "/games".httpPost().responseJson { _, _, result ->
             val (data, error) = result
+
             val json = data?.obj()
-            val you = json?.getJSONObject("you")
             val gameName = json?.getJSONObject("game")?.getString("name")
-            val id = you?.getString("id")
-            val token = you?.getString("token")
+            val me = json?.getJSONObject("you")
+            val id = me?.getString("id")
+            val token = me?.getString("token")
 
             if (error == null && gameName != null && id != null && token != null) {
-                val player = Player(id, token)
+                val player = Player(id, token, true)
                 game = GameData(gameName, player, null)
                 handler(game)
             } else {
@@ -72,12 +72,12 @@ object Game {
         "/games/$gameName".httpPost().responseJson { _, _, result ->
             val (data, error) = result
             val json = data?.obj()
-            val you = json?.getJSONObject("you")
-            val id = you?.getString("id")
-            val token = you?.getString("token")
+            val me = json?.getJSONObject("you")
+            val id = me?.getString("id")
+            val token = me?.getString("token")
 
             if (error == null && id != null && token != null) {
-                val player = Player(id, token)
+                val player = Player(id, token, false)
                 game = GameData(gameName, player, null)
                 handler(true)
             } else {
@@ -85,6 +85,8 @@ object Game {
             }
         }
     }
+
+    fun amISeeking (): Boolean = game?.me?.isSeeking ?: false
 
     fun start() {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
