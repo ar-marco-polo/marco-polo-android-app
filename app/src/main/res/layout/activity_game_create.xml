@@ -19,7 +19,7 @@
                 android:textColor="#eee"
                 android:textSize="18dp"
                 android:layout_marginBottom="6dp"
-                android:text="Invite an other Player to start a game."/>
+                android:text="@string/game_create_game_explanation_label"/>
         <Button
                 android:text="Invite other Player"
                 android:layout_width="wrap_content"
