@@ -1,8 +1,10 @@
 package berlin.htw.augmentedreality.spatialaudio
 
 import android.app.Activity
+import android.content.AsyncQueryHandler
 import com.fasterxml.jackson.module.kotlin.*
 import android.content.Context
+import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -10,14 +12,16 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.media.MediaPlayer
 import android.util.Log
+import berlin.htw.augmentedreality.spatialaudio.activities.GameRunningActivity
 import berlin.htw.augmentedreality.spatialaudio.messages.Authentication
 import berlin.htw.augmentedreality.spatialaudio.messages.Movement
-import com.fasterxml.jackson.core.JsonFactory
+import berlin.htw.augmentedreality.spatialaudio.messages.Status
 import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpPost
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
+import org.json.JSONObject
 
 object Game {
     data class Player (
@@ -29,7 +33,8 @@ object Game {
     data class GameData (
             val name: String,
             val me: Player,
-            val other: Player?
+            var other: Player?,
+            var isRunning: Boolean = false
     )
 
     val BASE_URL = "http://192.168.0.4:3000"
@@ -106,9 +111,35 @@ object Game {
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         webSocket = connectSocket(game.name, game.me.id, token)
-        webSocket!!.on("status", { status ->
-            print(status)
+        webSocket!!.on("status", { args ->
+            val json = (args[0] as JSONObject).toString()
+            val JSON = jacksonObjectMapper()
+            val status: Status = JSON.readValue(json)
+            handleStatusUpdate(status)
         })
+    }
+
+    fun handleStatusUpdate(status: Status) {
+        val game = game ?: return
+
+        val location = Location("spatial-audio")
+        location.latitude = status.position[0]
+        location.longitude = status.position[1]
+
+        if (game.other == null) {
+            game.other = Player(status.id, null, location)
+        } else {
+            // TODO: check if player id matches
+            game.other?.location = location
+        }
+
+        if (!game.isRunning) {
+            val startGameIntent = Intent(activity, GameRunningActivity::class.java)
+            activity?.startActivity(startGameIntent)
+
+            game.isRunning = true
+            this.game = game
+        }
     }
 
     fun handleMovement(location: Location) {
@@ -145,8 +176,10 @@ object Game {
     private class RotationEventListener : SensorEventListener {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(event: SensorEvent) {
-            // make shure game is set up with a player and a location
-            val ownLocation = game?.me?.location ?: return
+            // make shure game is set up with locations
+            val game = game ?: return
+            val ownLocation = game.me.location ?: return
+            val otherLocation = game.other?.location ?: return
 
             val (x, y, z, w) = event.values
             val quaternion = floatArrayOf(w, x, y, z)
@@ -164,10 +197,10 @@ object Game {
             val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
             val maxDistanceKm = 5
 
-            val locationOfOtherPlayer = doubleArrayOf(52.520709, 13.409429) // Fernsehturm Berlin
+            val otherLocationArray = doubleArrayOf(otherLocation.latitude, otherLocation.longitude)
             val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
-            val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, locationOfOtherPlayer)
-            val distanceToOtherPlayer = Geodesic.distanceBetween(ownLocationArray, locationOfOtherPlayer)
+            val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, otherLocationArray)
+            val distanceToOtherPlayer = Geodesic.distanceBetween(ownLocationArray, otherLocationArray)
             val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
             val distanceFactor = (maxDistanceKm - distanceToOtherPlayer) / maxDistanceKm
 
