@@ -16,18 +16,18 @@ class GameRunningActivity : BaseActivity() {
         setContentView(R.layout.activity_game_running)
 
         val explanation = findViewById(R.id.game_running__explanation_text) as TextView
-        val foundButton = findViewById(R.id.game_running__was_found_button)
+        val gameOverButton = findViewById(R.id.game_running__game_over_button)
         val abortButton = findViewById(R.id.game_running__abort_game_button)
 
         if (Game.amISeeking()) {
-            foundButton.visibility = View.GONE
+            gameOverButton.visibility = View.GONE
             explanation.text = getText(R.string.game_running_hider_text)
         } else {
-            foundButton.visibility = View.VISIBLE
+            gameOverButton.visibility = View.VISIBLE
             explanation.text = getText(R.string.game_running_seeker_text)
         }
 
-        foundButton.setOnClickListener {
+        gameOverButton.setOnClickListener {
             playerLost()
         }
 

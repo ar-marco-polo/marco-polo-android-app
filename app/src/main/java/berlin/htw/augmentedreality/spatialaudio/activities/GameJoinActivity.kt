@@ -10,7 +10,7 @@ class GameJoinActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.dummy)
+        setContentView(R.layout.activity_game_join)
 
         // app was started from invitation link to join an exiting game
         val data = intent.data
