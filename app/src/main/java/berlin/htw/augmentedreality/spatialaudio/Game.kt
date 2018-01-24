@@ -42,6 +42,10 @@ object Game {
         class OtherLocationChanged(val playerLocation: PlayerLocation) : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
+
+        class OtherPlayerJoined() : GameUpdateEvent() {
+            fun emit() = Companion.emit(this)
+        }
     }
 
     val BASE_URL = "http://192.168.0.4:3000"
@@ -117,6 +121,10 @@ object Game {
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         webSocket = connectSocket(game.name, game.me.id, token)
+        webSocket!!.on("join", {
+            GameUpdateEvent.OtherPlayerJoined().emit()
+        })
+
         webSocket!!.on("location", { args ->
             val json = (args[0] as JSONObject).toString()
             val JSON = jacksonObjectMapper()
@@ -143,7 +151,7 @@ object Game {
         GameUpdateEvent.OtherLocationChanged(playerLocation).emit()
     }
 
-    fun handleOwnLocationChnage(location: Location) {
+    fun handleOwnLocationChange(location: Location) {
         val game = game ?: return
         val webSocket = webSocket ?: return
 

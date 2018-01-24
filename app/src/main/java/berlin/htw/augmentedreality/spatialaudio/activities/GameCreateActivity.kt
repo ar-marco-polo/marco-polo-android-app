@@ -38,8 +38,9 @@ class GameCreateActivity : BaseActivity() {
         }
 
         Game.GameUpdateEvent on {
-            when (it) { is Game.GameUpdateEvent.OtherLocationChanged -> {
+            when (it) { is Game.GameUpdateEvent.OtherPlayerJoined -> {
                     val startGameIntent = Intent(this, GameRunningActivity::class.java)
+                    startGameIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME
                     this.startActivity(startGameIntent)
                     this.finish()
                 }

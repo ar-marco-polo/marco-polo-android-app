@@ -2,7 +2,6 @@ package berlin.htw.augmentedreality.spatialaudio
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.IntentSender
 import com.google.android.gms.common.api.ResolvableApiException
 import android.content.pm.PackageManager
@@ -69,7 +68,7 @@ object LocationUtils {
         val locationCallback = object: LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 val locationResult = locationResult ?: return
-                Game.handleOwnLocationChnage(locationResult.lastLocation)
+                Game.handleOwnLocationChange(locationResult.lastLocation)
             }
         }
 
