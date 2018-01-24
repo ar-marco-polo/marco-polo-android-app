@@ -21,7 +21,8 @@
                 android:layout_marginBottom="6dp"
                 android:text="Somebody invited you to a game.\nClick below when you're ready." />
         <Button
-                android:text="I'm ready"
+                android:id="@+id/game_join_button"
+                android:text="@string/game_join_button_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
     </LinearLayout>
