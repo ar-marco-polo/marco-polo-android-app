@@ -1,8 +1,7 @@
 package berlin.htw.augmentedreality.spatialaudio.activities
 
-import android.content.Intent
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Toast
 import berlin.htw.augmentedreality.spatialaudio.Game
 import berlin.htw.augmentedreality.spatialaudio.R
 
@@ -18,6 +17,8 @@ class GameJoinActivity : BaseActivity() {
         Game.joinGame(gameName) { success ->
             if (success) {
                 Game.start()
+            } else {
+                Toast.makeText(this, "Could not join game", Toast.LENGTH_LONG).show()
             }
         }
     }
