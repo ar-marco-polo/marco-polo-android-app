@@ -51,10 +51,12 @@ object Game {
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
+    fun setup() {
+        FuelManager.instance.basePath = BASE_URL
+    }
+
     fun getOrCreateGame(handler: (game: GameData?) -> Unit) {
         if (game != null) return handler(game)
-
-        FuelManager.instance.basePath = BASE_URL
 
         "/games".httpPost().responseJson { _, _, result ->
             val (data, error) = result
