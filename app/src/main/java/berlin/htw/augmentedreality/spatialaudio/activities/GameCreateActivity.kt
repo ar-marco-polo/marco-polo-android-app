@@ -20,13 +20,13 @@ class GameCreateActivity : BaseActivity() {
 
         findViewById(R.id.game_creation_button).setOnClickListener {
             Log.d(TAG, "Clicked game creation button")
-            Game.createNewGame { gameName ->
-                if (gameName != null) {
+            Game.createNewGame { game ->
+                if (game != null) {
                     Game.start()
 
                     // show share dialog to invite other player
                     val sendIntent = Intent()
-                    val invitationLink = "${Game.BASE_URL}/games/$gameName"
+                    val invitationLink = "${Game.BASE_URL}/games/${game.name}"
                     sendIntent.action = Intent.ACTION_SEND
                     sendIntent.putExtra(Intent.EXTRA_TEXT, invitationLink)
                     sendIntent.type = "text/plain"

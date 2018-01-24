@@ -26,12 +26,15 @@ object Game {
         var location: Location? = null
     )
 
-    
-
+    data class GameData (
+            val name: String,
+            val me: Player,
+            val other: Player?
+    )
 
     val BASE_URL = "http://192.168.0.4:3000"
 
-    private var name: String? = null
+    private var game: GameData? = null
     private var activity: Activity? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
@@ -43,7 +46,9 @@ object Game {
         FuelManager.instance.basePath = BASE_URL
     }
 
-    fun createNewGame(handler: (gameName: String?) -> Unit) {
+    fun createNewGame(handler: (game: GameData?) -> Unit) {
+        if (game != null) return handler(game)
+
         "/games".httpPost().responseJson { _, _, result ->
             val (data, error) = result
             val json = data?.obj()
@@ -53,16 +58,16 @@ object Game {
             val token = you?.getString("token")
 
             if (error == null && gameName != null && id != null && token != null) {
-                player = Player(id, token)
-                name = gameName
-                handler(gameName)
+                val player = Player(id, token)
+                game = GameData(gameName, player, null)
+                handler(game)
             } else {
                 handler(null)
             }
         }
     }
 
-    fun joinGame(gameName: String?, handler: (success: Boolean) -> Unit) {
+    fun joinGame(gameName: String, handler: (success: Boolean) -> Unit) {
         "/games/$gameName".httpPost().responseJson { _, _, result ->
             val (data, error) = result
             val json = data?.obj()
@@ -71,8 +76,8 @@ object Game {
             val token = you?.getString("token")
 
             if (error == null && id != null && token != null) {
-                name = gameName
-                player = Player(id, token)
+                val player = Player(id, token)
+                game = GameData(gameName, player, null)
                 handler(true)
             } else {
                 handler(false)
@@ -83,9 +88,8 @@ object Game {
     fun start() {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
         val activity = activity ?: return
-        val player = player ?: return
-        val token = player.token ?: return
-        val gameName = name ?: return
+        val game = game ?: return
+        val token = game.me.token ?: return
 
         // Initialize MediaPlayer
         mediaPlayer = MediaPlayer.create(activity, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
@@ -101,17 +105,17 @@ object Game {
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
-        webSocket = connectSocket(gameName, player.id, token)
+        webSocket = connectSocket(game.name, game.me.id, token)
         webSocket!!.on("status", { status ->
             print(status)
         })
     }
 
     fun handleMovement(location: Location) {
-        val player = player ?: return
+        val game = game ?: return
         val webSocket = webSocket ?: return
 
-        player.location = location
+        game.me.location = location
         val JSON = jacksonObjectMapper()
         val movement = Movement(location)
         webSocket.emit("movement", JSON.writeValueAsBytes(movement))
@@ -142,7 +146,7 @@ object Game {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(event: SensorEvent) {
             // make shure game is set up with a player and a location
-            val ownLocation = player?.location ?: return
+            val ownLocation = game?.me?.location ?: return
 
             val (x, y, z, w) = event.values
             val quaternion = floatArrayOf(w, x, y, z)
