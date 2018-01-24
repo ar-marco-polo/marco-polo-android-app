@@ -1,16 +1,17 @@
-package berlin.htw.augmentedreality.spatialaudio
+package berlin.htw.augmentedreality.spatialaudio.activities
 
 import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.util.Log
-import com.fasterxml.jackson.core.JsonFactory
+import berlin.htw.augmentedreality.spatialaudio.Game
+import berlin.htw.augmentedreality.spatialaudio.LocationUtils
+import berlin.htw.augmentedreality.spatialaudio.R
 
-class FullscreenActivity : AppCompatActivity() {
+class GameCreateActivity : AppCompatActivity() {
 
-    val TAG = "FULLSCREEN_ACTIVITY"
+    val TAG = "GAME_CREATE_ACTIVITY"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,18 +40,17 @@ class FullscreenActivity : AppCompatActivity() {
                 }
             }
         }
-
-        checkForJoinIntent()
     }
 
     override fun onResume() {
         super.onResume()
-        checkForJoinIntent()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when (requestCode) {
-            LocationUtils.LOCATION_REQUEST_CODE -> { LocationUtils.setupLocationListener() }
+            LocationUtils.LOCATION_REQUEST_CODE -> {
+                LocationUtils.setupLocationListener()
+            }
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
@@ -62,17 +62,6 @@ class FullscreenActivity : AppCompatActivity() {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     LocationUtils.setupLocationListener()
                 }
-            }
-        }
-    }
-
-    fun checkForJoinIntent () {
-        if (intent.action == Intent.ACTION_VIEW) {
-            // app was started from invitation link to join an exiting game
-            val data = intent.data
-            val gameName = data.getQueryParameter("g")
-            Game.joinGame(gameName) { success ->
-                if (success) { Game.start() }
             }
         }
     }

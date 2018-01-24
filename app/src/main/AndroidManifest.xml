@@ -1,34 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="berlin.htw.augmentedreality.spatialaudio" >
+          package="berlin.htw.augmentedreality.spatialaudio">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme" >
-        <activity
-            android:name="berlin.htw.augmentedreality.spatialaudio.FullscreenActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:allowBackup="true"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
-            android:theme="@style/FullscreenTheme" >
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
+            android:theme="@style/AppTheme">
+        <ctx
+                android:name="berlin.htw.augmentedreality.spatialaudio.activities.GameCreateActivity"
+                android:configChanges="orientation|keyboardHidden|screenSize"
+                android:label="@string/app_name"
+                android:theme="@style/FullscreenTheme">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.BROWSABLE" />
+
+                <category android:name="android.intent.category.BROWSABLE"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="http"
-                      android:host="192.168.0.106"
-                      android:port="3000"
-                      android:path="/join" />
+
+                <data
+                        android:host="192.168.0.106"
+                        android:path="/join"
+                        android:port="3000"
+                        android:scheme="http"/>
             </intent-filter>
+        </ctx>
+
+        <activity android:name=".activities.GameJoinActivity">
+        </activity>
+        <activity android:name=".activities.GameRunningActivity">
         </activity>
     </application>
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
 </manifest>

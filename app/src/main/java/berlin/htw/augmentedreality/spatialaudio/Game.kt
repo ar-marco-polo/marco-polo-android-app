@@ -33,13 +33,13 @@ object Game {
     val BASE_URL = "http://192.168.0.106:3000"
 
     private var name: String? = null
-    private var activity: Activity? = null
+    private var ctx: Context? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
-    fun setup(activity: Activity) {
-        this.activity = activity
+    fun setup(ctx: Context) {
+        this.ctx = ctx
         FuelManager.instance.basePath = BASE_URL
     }
 
@@ -81,8 +81,8 @@ object Game {
     }
 
     fun start() {
-        // TODO: maybe we can throw here or something to let the user retry when activity is missing
-        val activity = activity ?: return
+        // TODO: maybe we can throw here or something to let the user retry when ctx is missing
+        val activity = ctx ?: return
         val player = player ?: return
         val token = player.token ?: return
         val gameName = name ?: return
