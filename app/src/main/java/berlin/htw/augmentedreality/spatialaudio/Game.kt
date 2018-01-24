@@ -1,7 +1,7 @@
 package berlin.htw.augmentedreality.spatialaudio
 
-import com.fasterxml.jackson.module.kotlin.*
 import android.app.Activity
+import com.fasterxml.jackson.module.kotlin.*
 import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -27,25 +27,29 @@ object Game {
         var location: Location? = null
     )
 
-    val jsonFactory = JsonFactory()
+    data class GameData (
+            val name: String,
+            val me: Player,
+            val other: Player?
+    )
 
-    var player: Player? = null
-    var otherPlayer: Player? = null
+    val BASE_URL = "http://192.168.0.4:3000"
 
-    val BASE_URL = "http://192.168.0.106:3000"
-
-    private var name: String? = null
+    private var game: GameData? = null
     private var activity: Activity? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
     fun setup(activity: Activity) {
+        if (this.activity != null) return
         this.activity = activity
         FuelManager.instance.basePath = BASE_URL
     }
 
-    fun createNewGame(handler: (gameName: String?) -> Unit) {
+    fun createNewGame(handler: (game: GameData?) -> Unit) {
+        if (game != null) return handler(game)
+
         "/games".httpPost().responseJson { _, _, result ->
             val (data, error) = result
             val json = data?.obj()
@@ -55,16 +59,16 @@ object Game {
             val token = you?.getString("token")
 
             if (error == null && gameName != null && id != null && token != null) {
-                player = Player(id, token)
-                name = gameName
-                handler(gameName)
+                val player = Player(id, token)
+                game = GameData(gameName, player, null)
+                handler(game)
             } else {
                 handler(null)
             }
         }
     }
 
-    fun joinGame(gameName: String?, handler: (success: Boolean) -> Unit) {
+    fun joinGame(gameName: String, handler: (success: Boolean) -> Unit) {
         "/games/$gameName".httpPost().responseJson { _, _, result ->
             val (data, error) = result
             val json = data?.obj()
@@ -73,8 +77,8 @@ object Game {
             val token = you?.getString("token")
 
             if (error == null && id != null && token != null) {
-                name = gameName
-                player = Player(id, token)
+                val player = Player(id, token)
+                game = GameData(gameName, player, null)
                 handler(true)
             } else {
                 handler(false)
@@ -85,9 +89,8 @@ object Game {
     fun start() {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
         val activity = activity ?: return
-        val player = player ?: return
-        val token = player.token ?: return
-        val gameName = name ?: return
+        val game = game ?: return
+        val token = game.me.token ?: return
 
         // Initialize MediaPlayer
         mediaPlayer = MediaPlayer.create(activity, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
@@ -103,30 +106,17 @@ object Game {
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
-        webSocket = connectSocket(gameName, player.id, token)
-        webSocket!!.on("status", { args ->
-            val json = args[0] as JSONObject
-            val id = json.getString("id")
-            val latLong = json.getJSONArray("position")
-
-            val location = Location("spatial-audio")
-            location.latitude = latLong.getDouble(0)
-            location.longitude = latLong.getDouble(1)
-
-            if (otherPlayer == null) {
-                otherPlayer = Player(id, null, location)
-            } else {
-                // TODO: check if player id matches
-                otherPlayer?.location = location
-            }
+        webSocket = connectSocket(game.name, game.me.id, token)
+        webSocket!!.on("status", { status ->
+            print(status)
         })
     }
 
     fun handleMovement(location: Location) {
-        val player = player ?: return
+        val game = game ?: return
         val webSocket = webSocket ?: return
 
-        player.location = location
+        game.me.location = location
         val JSON = jacksonObjectMapper()
         val movement = Movement(location)
         webSocket.emit("movement", JSON.writeValueAsBytes(movement))
@@ -157,8 +147,7 @@ object Game {
         override fun onAccuracyChanged(s: Sensor?, a: Int) {}
         override fun onSensorChanged(event: SensorEvent) {
             // make shure game is set up with a player and a location
-            val ownLocation = player?.location ?: return
-            val otherLocation = otherPlayer?.location ?: return
+            val ownLocation = game?.me?.location ?: return
 
             val (x, y, z, w) = event.values
             val quaternion = floatArrayOf(w, x, y, z)
@@ -176,10 +165,10 @@ object Game {
             val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
             val maxDistanceKm = 5
 
-            val otherLocationArray = doubleArrayOf(otherLocation.latitude, otherLocation.longitude) // Fernsehturm Berlin
+            val fernsehturm = doubleArrayOf(52.52074, 13.40965) // Fernsehturm Berlin
             val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
-            val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, otherLocationArray)
-            val distanceToOtherPlayer = Geodesic.distanceBetween(ownLocationArray, otherLocationArray)
+            val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, fernsehturm)
+            val distanceToOtherPlayer = Geodesic.distanceBetween(ownLocationArray, fernsehturm)
             val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
             val distanceFactor = (maxDistanceKm - distanceToOtherPlayer) / maxDistanceKm
 

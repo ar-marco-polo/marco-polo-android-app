@@ -2,12 +2,13 @@ package berlin.htw.augmentedreality.spatialaudio
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.IntentSender
 import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.*
 import android.content.pm.PackageManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import com.google.android.gms.location.*
 
 object LocationUtils {
     val LOCATION_REQUEST_CODE = 0
@@ -16,6 +17,7 @@ object LocationUtils {
     private var activity: Activity? = null
 
     fun setup(activity: Activity) {
+        if (this.activity != null) return
         this.activity = activity
 
         val locationRequest = getLocationRequest()
@@ -24,11 +26,11 @@ object LocationUtils {
         val client = LocationServices.getSettingsClient(activity)
         val task = client.checkLocationSettings(builder.build())
 
-        task.addOnSuccessListener(activity) { _ ->
+        task.addOnSuccessListener { _ ->
             setupLocationListener()
         }
 
-        task.addOnFailureListener(activity) { e ->
+        task.addOnFailureListener { e ->
             if (e is ResolvableApiException) {
                 // Location settings are not satisfied, but this can be fixed
                 // by showing the user a dialog.
