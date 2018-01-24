@@ -1,5 +1,6 @@
 package berlin.htw.augmentedreality.spatialaudio.activities
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -45,16 +46,50 @@ class GameRunningActivity : BaseActivity() {
                     runOnUiThread { accuracy.text = label }
                 }
                 is Game.GameUpdateEvent.OtherLocationChanged -> Log.d(tag, "Got status event from server")
+                is Game.GameUpdateEvent.GameOver -> {
+                    if (it.won) {
+                        displayCongratulation()
+                    } else {
+                        displayOtherPlayerAborted()
+                    }
+                }
             }
         }
     }
 
     fun gameOver() {
         Log.d(tag, "Clicked 'I Was Found' button")
+        Game.gotCaught()
+        displayNewGameScreen()
     }
 
     fun abortGame() {
         Log.d(tag, "Clicked abort button")
+        Game.abort()
+        displayNewGameScreen()
+    }
+
+    fun displayCongratulation() {
+        AlertDialog.Builder(this)
+                .setTitle("Congratulations!")
+                .setMessage("You won. :)")
+                .setOnDismissListener {
+                    displayNewGameScreen()
+                }
+                .show()
+    }
+
+    fun displayOtherPlayerAborted() {
+        AlertDialog.Builder(this)
+                .setTitle("Game ended")
+                .setMessage("The other player aborted the game.")
+                .setOnDismissListener {
+                    displayNewGameScreen()
+                }
+                .show()
+    }
+
+    fun displayNewGameScreen() {
         val createNewGame = Intent(this, GameCreateActivity::class.java)
         createNewGame.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME
         startActivity(createNewGame)
