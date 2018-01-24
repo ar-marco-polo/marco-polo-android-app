@@ -31,23 +31,22 @@ object Game {
     )
 
     data class GameData (
-            val name: String,
-            val me: Player,
-            var other: Player?,
-            var isRunning: Boolean = false
+        val name: String,
+        val me: Player,
+        var other: Player?
     )
 
     val BASE_URL = "http://192.168.0.4:3000"
 
     private var game: GameData? = null
-    private var activity: Activity? = null
+    private var startActivity: Activity? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
     fun setup(activity: Activity) {
-        if (this.activity != null) return
-        this.activity = activity
+        if (this.startActivity != null) return
+        this.startActivity = activity
         FuelManager.instance.basePath = BASE_URL
     }
 
@@ -92,7 +91,7 @@ object Game {
 
     fun start() {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
-        val activity = activity ?: return
+        val activity = startActivity ?: return
         val game = game ?: return
         val token = game.me.token ?: return
 
@@ -133,12 +132,11 @@ object Game {
             game.other?.location = location
         }
 
-        if (!game.isRunning) {
-            val startGameIntent = Intent(activity, GameRunningActivity::class.java)
-            activity?.startActivity(startGameIntent)
-
-            game.isRunning = true
-            this.game = game
+        if (startActivity != null) {
+            val startGameIntent = Intent(startActivity, GameRunningActivity::class.java)
+            startActivity!!.startActivity(startGameIntent)
+            startActivity!!.finish()
+            startActivity = null
         }
     }
 
