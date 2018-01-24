@@ -44,7 +44,11 @@ object Game {
             fun emit() = Companion.emit(this)
         }
 
-        class OtherPlayerJoined() : GameUpdateEvent() {
+        class OtherPlayerJoined : GameUpdateEvent() {
+            fun emit() = Companion.emit(this)
+        }
+
+        class GameOver(val won: Boolean) : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
     }
@@ -123,16 +127,23 @@ object Game {
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         webSocket = connectSocket(game.name, game.me.id, token)
-        webSocket!!.on("join", {
-            GameUpdateEvent.OtherPlayerJoined().emit()
-        })
 
-        webSocket!!.on("location", { args ->
-            val json = (args[0] as JSONObject).toString()
-            val JSON = jacksonObjectMapper()
-            val status: PlayerLocation = JSON.readValue(json)
-            handleOtherLocationChange(status)
-        })
+        webSocket!!
+                .on("join", {
+                    GameUpdateEvent.OtherPlayerJoined().emit()
+                })
+                .on("gotCaught", {
+                    GameUpdateEvent.GameOver(won = true).emit()
+                })
+                .on("abort", {
+                    GameUpdateEvent.GameOver(won = false).emit()
+                })
+                .on("location", { args ->
+                    val json = (args[0] as JSONObject).toString()
+                    val JSON = jacksonObjectMapper()
+                    val status: PlayerLocation = JSON.readValue(json)
+                    handleOtherLocationChange(status)
+                })
     }
 
     fun handleOtherLocationChange(playerLocation: PlayerLocation) {
@@ -184,6 +195,23 @@ object Game {
                 })
         socket.connect()
         return  socket
+    }
+
+    fun teardown() {
+        game = null
+        mediaPlayer?.stop()
+        rotationSensor = null
+        webSocket = null
+    }
+
+    fun abort() {
+        webSocket!!.emit("abort")
+        teardown()
+    }
+
+    fun gotCaught() {
+        webSocket!!.emit("gotCaught")
+        teardown()
     }
 
     private class RotationEventListener : SensorEventListener {
