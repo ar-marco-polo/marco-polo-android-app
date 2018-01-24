@@ -34,6 +34,13 @@ class GameRunningActivity : BaseActivity() {
         abortButton.setOnClickListener {
             abortGame()
         }
+
+        Game.GameUpdateEvent on {
+            when (it) {
+                is Game.GameUpdateEvent.Movement -> Log.d(tag, "Somebody moved")
+                is Game.GameUpdateEvent.Status -> Log.d(tag, "Got status event from server")
+            }
+        }
     }
 
     fun playerLost () {

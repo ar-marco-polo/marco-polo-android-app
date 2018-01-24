@@ -36,6 +36,18 @@ object Game {
         var other: Player?
     )
 
+    sealed class GameUpdateEvent {
+        companion object : Event<GameUpdateEvent>()
+
+        class Movement(val location: Location) : GameUpdateEvent() {
+            fun emit() = Companion.emit(this)
+        }
+
+        class Status(val data: berlin.htw.augmentedreality.spatialaudio.messages.Status) : GameUpdateEvent() {
+            fun emit() = Companion.emit(this)
+        }
+    }
+
     val BASE_URL = "http://192.168.0.4:3000"
 
     private var game: GameData? = null
@@ -43,6 +55,11 @@ object Game {
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
+
+    private val listeners = mapOf(
+            "statusUpdate" to mutableListOf<(Any) -> Unit>(),
+            "movement" to mutableListOf()
+    )
 
     fun setup(activity: Activity) {
         if (this.startActivity != null) return
@@ -141,6 +158,8 @@ object Game {
             startActivity!!.finish()
             startActivity = null
         }
+
+        GameUpdateEvent.Status(status).emit()
     }
 
     fun handleMovement(location: Location) {
@@ -151,6 +170,8 @@ object Game {
         val JSON = jacksonObjectMapper()
         val movement = Movement(location)
         webSocket.emit("movement", JSON.writeValueAsBytes(movement))
+
+        GameUpdateEvent.Movement(location).emit()
     }
 
     private fun connectSocket(gameName: String, playerId: String, token: String): Socket {
