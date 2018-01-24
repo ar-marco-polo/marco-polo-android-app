@@ -4,7 +4,7 @@ import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import berlin.htw.augmentedreality.spatialaudio.R
 
-class GameRunningActivity : AppCompatActivity() {
+class GameRunningActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

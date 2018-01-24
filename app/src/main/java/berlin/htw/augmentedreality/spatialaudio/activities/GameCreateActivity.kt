@@ -9,7 +9,7 @@ import berlin.htw.augmentedreality.spatialaudio.Game
 import berlin.htw.augmentedreality.spatialaudio.LocationUtils
 import berlin.htw.augmentedreality.spatialaudio.R
 
-class GameCreateActivity : AppCompatActivity() {
+class GameCreateActivity : BaseActivity() {
 
     val TAG = "GAME_CREATE_ACTIVITY"
 
