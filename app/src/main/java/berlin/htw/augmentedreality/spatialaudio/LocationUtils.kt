@@ -1,10 +1,9 @@
 package berlin.htw.augmentedreality.spatialaudio
 
 import android.Manifest
-import android.app.Activity
+import android.content.Context
 import android.content.IntentSender
 import com.google.android.gms.common.api.ResolvableApiException
-import com.google.android.gms.location.*
 import android.content.pm.PackageManager
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -13,29 +12,29 @@ object LocationUtils {
     val LOCATION_REQUEST_CODE = 0
     val ACCESS_FINE_LOCATION_PERMISSIONS_REQUEST = 1
 
-    private var activity: Activity? = null
+    private var ctx: Context? = null
 
-    fun setup(activity: Activity) {
-        this.activity = activity
+    fun setup(ctx: Context) {
+        this.ctx = ctx
 
         val locationRequest = getLocationRequest()
 
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
-        val client = LocationServices.getSettingsClient(activity)
+        val client = LocationServices.getSettingsClient(ctx)
         val task = client.checkLocationSettings(builder.build())
 
-        task.addOnSuccessListener(activity) { _ ->
+        task.addOnSuccessListener(ctx) { _ ->
             setupLocationListener()
         }
 
-        task.addOnFailureListener(activity) { e ->
+        task.addOnFailureListener(ctx) { e ->
             if (e is ResolvableApiException) {
                 // Location settings are not satisfied, but this can be fixed
                 // by showing the user a dialog.
                 try {
                     // Show the dialog by calling startResolutionForResult(),
                     // and check the result in onActivityResult().
-                    e.startResolutionForResult(activity, LOCATION_REQUEST_CODE)
+                    e.startResolutionForResult(ctx, LOCATION_REQUEST_CODE)
                 } catch (sendEx: IntentSender.SendIntentException) {
                     // Ignore the error.
                 }
@@ -52,7 +51,7 @@ object LocationUtils {
     }
 
     fun setupLocationListener() {
-        val activity = this.activity ?: return
+        val activity = this.ctx ?: return
         // check if we have permission to access fine location
         if (ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {

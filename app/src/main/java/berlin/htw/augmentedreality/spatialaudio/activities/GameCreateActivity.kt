@@ -18,10 +18,6 @@ class GameCreateActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_fullscreen)
 
-        // DebugUtils.setup()
-        Game.setup(this)
-        LocationUtils.setup(this)
-
         findViewById(R.id.game_creation_button).setOnClickListener {
             Log.d(TAG, "Clicked game creation button")
             Game.createNewGame { gameName ->
@@ -40,10 +36,6 @@ class GameCreateActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
