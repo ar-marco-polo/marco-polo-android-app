@@ -1,7 +1,6 @@
 package berlin.htw.augmentedreality.spatialaudio
 
 import android.app.Activity
-import android.content.AsyncQueryHandler
 import com.fasterxml.jackson.module.kotlin.*
 import android.content.Context
 import android.content.Intent
@@ -21,6 +20,7 @@ import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpPost
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
+import org.json.JSONObject
 
 object Game {
     data class Player (
@@ -129,7 +129,7 @@ object Game {
         location.longitude = status.position[1]
 
         if (game.other == null) {
-            game.other = Player(status.id, null, location)
+            game.other = Player(status.id, null, !amISeeking(), location)
         } else {
             // TODO: check if player id matches
             game.other?.location = location
