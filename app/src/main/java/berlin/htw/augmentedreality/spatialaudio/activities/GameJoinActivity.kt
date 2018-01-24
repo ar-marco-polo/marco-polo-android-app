@@ -23,7 +23,7 @@ class GameJoinActivity : BaseActivity() {
             Log.d(tag, "Clicked game join button")
             Game.joinGame(gameName) { success ->
                 if (success) {
-                    Game.start()
+                    Game.start(this)
                     val gameRunning = Intent(this, GameRunningActivity::class.java)
                     gameRunning.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME
                     startActivity(gameRunning)
