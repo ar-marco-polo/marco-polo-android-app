@@ -18,6 +18,7 @@ import com.github.kittinunf.fuel.core.FuelManager
 import com.github.kittinunf.fuel.httpPost
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
+import org.json.JSONObject
 
 object Game {
     data class Player (
@@ -29,6 +30,7 @@ object Game {
     val jsonFactory = JsonFactory()
 
     var player: Player? = null
+    var otherPlayer: Player? = null
 
     val BASE_URL = "http://192.168.0.106:3000"
 
@@ -102,8 +104,21 @@ object Game {
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         webSocket = connectSocket(gameName, player.id, token)
-        webSocket!!.on("status", { status ->
-            print(status)
+        webSocket!!.on("status", { args ->
+            val json = args[0] as JSONObject
+            val id = json.getString("id")
+            val latLong = json.getJSONArray("position")
+
+            val location = Location("spatial-audio")
+            location.latitude = latLong.getDouble(0)
+            location.longitude = latLong.getDouble(1)
+
+            if (otherPlayer == null) {
+                otherPlayer = Player(id, null, location)
+            } else {
+                // TODO: check if player id matches
+                otherPlayer?.location = location
+            }
         })
     }
 
@@ -143,6 +158,7 @@ object Game {
         override fun onSensorChanged(event: SensorEvent) {
             // make shure game is set up with a player and a location
             val ownLocation = player?.location ?: return
+            val otherLocation = otherPlayer?.location ?: return
 
             val (x, y, z, w) = event.values
             val quaternion = floatArrayOf(w, x, y, z)
@@ -160,10 +176,10 @@ object Game {
             val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
             val maxDistanceKm = 5
 
-            val locationOfOtherPlayer = doubleArrayOf(52.520709, 13.409429) // Fernsehturm Berlin
+            val otherLocationArray = doubleArrayOf(otherLocation.latitude, otherLocation.longitude) // Fernsehturm Berlin
             val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
-            val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, locationOfOtherPlayer)
-            val distanceToOtherPlayer = Geodesic.distanceBetween(ownLocationArray, locationOfOtherPlayer)
+            val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, otherLocationArray)
+            val distanceToOtherPlayer = Geodesic.distanceBetween(ownLocationArray, otherLocationArray)
             val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
             val distanceFactor = (maxDistanceKm - distanceToOtherPlayer) / maxDistanceKm
 
