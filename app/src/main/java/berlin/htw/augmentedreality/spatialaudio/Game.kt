@@ -113,9 +113,7 @@ object Game {
 
         player.location = location
         val JSON = jacksonObjectMapper()
-        val movement = Movement(
-                doubleArrayOf(location.latitude, location.longitude).toTypedArray()
-        )
+        val movement = Movement(location)
         webSocket.emit("movement", JSON.writeValueAsBytes(movement))
     }
 
