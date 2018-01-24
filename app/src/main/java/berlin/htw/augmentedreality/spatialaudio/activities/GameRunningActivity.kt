@@ -47,10 +47,12 @@ class GameRunningActivity : BaseActivity() {
                 }
                 is Game.GameUpdateEvent.OtherLocationChanged -> Log.d(tag, "Got status event from server")
                 is Game.GameUpdateEvent.GameOver -> {
-                    if (it.won) {
-                        displayCongratulation()
-                    } else {
-                        displayOtherPlayerAborted()
+                    runOnUiThread {
+                        if (it.won) {
+                            displayCongratulation()
+                        } else {
+                            displayOtherPlayerAborted()
+                        }
                     }
                 }
             }
