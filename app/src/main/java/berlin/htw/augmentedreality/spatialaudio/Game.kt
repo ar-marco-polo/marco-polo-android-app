@@ -1,9 +1,7 @@
 package berlin.htw.augmentedreality.spatialaudio
 
-import android.app.Activity
 import com.fasterxml.jackson.module.kotlin.*
 import android.content.Context
-import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -11,12 +9,11 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.media.MediaPlayer
 import android.util.Log
-import berlin.htw.augmentedreality.spatialaudio.activities.GameRunningActivity
 import berlin.htw.augmentedreality.spatialaudio.messages.Authentication
-import berlin.htw.augmentedreality.spatialaudio.messages.Movement
-import berlin.htw.augmentedreality.spatialaudio.messages.Status
+import berlin.htw.augmentedreality.spatialaudio.messages.PlayerLocation
 import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
+import com.github.kittinunf.fuel.core.interceptors.cUrlLoggingRequestInterceptor
 import com.github.kittinunf.fuel.httpPost
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
@@ -39,11 +36,15 @@ object Game {
     sealed class GameUpdateEvent {
         companion object : Event<GameUpdateEvent>()
 
-        class Movement(val location: Location) : GameUpdateEvent() {
+        class OwnLocationChanged(val location: Location) : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
 
-        class Status(val data: berlin.htw.augmentedreality.spatialaudio.messages.Status) : GameUpdateEvent() {
+        class OtherLocationChanged(val playerLocation: PlayerLocation) : GameUpdateEvent() {
+            fun emit() = Companion.emit(this)
+        }
+
+        class OtherPlayerJoined() : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
     }
@@ -51,23 +52,16 @@ object Game {
     val BASE_URL = "http://192.168.0.4:3000"
 
     private var game: GameData? = null
-    private var startActivity: Activity? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
-    private val listeners = mapOf(
-            "statusUpdate" to mutableListOf<(Any) -> Unit>(),
-            "movement" to mutableListOf()
-    )
-
-    fun setup(activity: Activity) {
-        if (this.startActivity != null) return
-        this.startActivity = activity
+    fun setup() {
         FuelManager.instance.basePath = BASE_URL
+        FuelManager.instance.addRequestInterceptor(cUrlLoggingRequestInterceptor())
     }
 
-    fun createNewGame(handler: (game: GameData?) -> Unit) {
+    fun getOrCreateGame(handler: (game: GameData?) -> Unit) {
         if (game != null) return handler(game)
 
         "/games".httpPost().responseJson { _, _, result ->
@@ -109,69 +103,66 @@ object Game {
 
     fun amISeeking (): Boolean = game?.me?.isSeeking ?: false
 
-    fun start() {
+    fun start(ctx: Context) {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
-        val activity = startActivity ?: return
         val game = game ?: return
         val token = game.me.token ?: return
 
         // Initialize MediaPlayer
-        mediaPlayer = MediaPlayer.create(activity, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
+        mediaPlayer = MediaPlayer.create(ctx, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
         mediaPlayer!!.setVolume(0.0f, 0.0f)
         mediaPlayer!!.isLooping = true
         mediaPlayer!!.start()
 
         // set up sensor listener
         // see also: https://source.android.com/devices/sensors/sensor-types#rotation_vector
-        val sensorManager = (activity.getSystemService(Context.SENSOR_SERVICE) as SensorManager)
+        val sensorManager = (ctx.getSystemService(Context.SENSOR_SERVICE) as SensorManager)
 
         // rotation vector (= Accelerometer, Magnetometer, and Gyroscope)
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
         sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
 
         webSocket = connectSocket(game.name, game.me.id, token)
-        webSocket!!.on("status", { args ->
+        webSocket!!.on("join", {
+            GameUpdateEvent.OtherPlayerJoined().emit()
+        })
+
+        webSocket!!.on("location", { args ->
             val json = (args[0] as JSONObject).toString()
             val JSON = jacksonObjectMapper()
-            val status: Status = JSON.readValue(json)
-            handleStatusUpdate(status)
+            val status: PlayerLocation = JSON.readValue(json)
+            handleOtherLocationChange(status)
         })
     }
 
-    fun handleStatusUpdate(status: Status) {
+    fun handleOtherLocationChange(playerLocation: PlayerLocation) {
         val game = game ?: return
 
         val location = Location("spatial-audio")
-        location.latitude = status.position[0]
-        location.longitude = status.position[1]
+        location.latitude = playerLocation.latitude
+        location.longitude = playerLocation.longitude
+        location.accuracy = playerLocation.accuracy
 
         if (game.other == null) {
-            game.other = Player(status.id, null, !amISeeking(), location)
+            game.other = Player(playerLocation.id!!, null, !amISeeking(), location)
         } else {
             // TODO: check if player id matches
             game.other?.location = location
         }
 
-        if (startActivity != null) {
-            val startGameIntent = Intent(startActivity, GameRunningActivity::class.java)
-            startActivity!!.startActivity(startGameIntent)
-            startActivity!!.finish()
-            startActivity = null
-        }
-
-        GameUpdateEvent.Status(status).emit()
+        GameUpdateEvent.OtherLocationChanged(playerLocation).emit()
     }
 
-    fun handleMovement(location: Location) {
+    fun handleOwnLocationChange(location: Location) {
         val game = game ?: return
         val webSocket = webSocket ?: return
 
         game.me.location = location
         val JSON = jacksonObjectMapper()
-        val movement = Movement(location)
-        webSocket.emit("movement", JSON.writeValueAsBytes(movement))
+        val movement = PlayerLocation(location)
+        webSocket.emit("location", JSON.writeValueAsBytes(movement))
 
-        GameUpdateEvent.Movement(location).emit()
+        GameUpdateEvent.OwnLocationChanged(location).emit()
     }
 
     private fun connectSocket(gameName: String, playerId: String, token: String): Socket {

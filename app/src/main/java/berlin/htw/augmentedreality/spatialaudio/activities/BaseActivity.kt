@@ -9,7 +9,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Game.setup(this)
+        Game.setup()
         LocationUtils.setup(this)
     }
 

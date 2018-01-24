@@ -20,9 +20,9 @@ class GameCreateActivity : BaseActivity() {
 
         findViewById(R.id.game_creation_button).setOnClickListener {
             Log.d(tag, "Clicked game creation button")
-            Game.createNewGame { game ->
+            Game.getOrCreateGame { game ->
                 if (game != null) {
-                    Game.start()
+                    Game.start(this)
 
                     // show share dialog to invite other player
                     val sendIntent = Intent()
@@ -33,6 +33,16 @@ class GameCreateActivity : BaseActivity() {
                     startActivity(sendIntent)
                 } else {
                     Toast.makeText(this, "Invalid Server Response.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+
+        Game.GameUpdateEvent on {
+            when (it) { is Game.GameUpdateEvent.OtherPlayerJoined -> {
+                    val startGameIntent = Intent(this, GameRunningActivity::class.java)
+                    startGameIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME
+                    this.startActivity(startGameIntent)
+                    this.finish()
                 }
             }
         }
