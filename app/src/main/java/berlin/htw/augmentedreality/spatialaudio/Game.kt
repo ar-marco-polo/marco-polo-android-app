@@ -134,7 +134,7 @@ object Game {
         location.accuracy = playerLocation.accuracy
 
         if (game.other == null) {
-            game.other = Player(playerLocation.playerId!!, null, !amISeeking(), location)
+            game.other = Player(playerLocation.id!!, null, !amISeeking(), location)
         } else {
             // TODO: check if player id matches
             game.other?.location = location
