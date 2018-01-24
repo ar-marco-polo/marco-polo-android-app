@@ -13,6 +13,7 @@ import berlin.htw.augmentedreality.spatialaudio.messages.Authentication
 import berlin.htw.augmentedreality.spatialaudio.messages.PlayerLocation
 import com.github.kittinunf.fuel.android.extension.responseJson
 import com.github.kittinunf.fuel.core.FuelManager
+import com.github.kittinunf.fuel.core.interceptors.cUrlLoggingRequestInterceptor
 import com.github.kittinunf.fuel.httpPost
 import com.github.nkzawa.socketio.client.IO
 import com.github.nkzawa.socketio.client.Socket
@@ -57,6 +58,7 @@ object Game {
 
     fun setup() {
         FuelManager.instance.basePath = BASE_URL
+        FuelManager.instance.addRequestInterceptor(cUrlLoggingRequestInterceptor())
     }
 
     fun getOrCreateGame(handler: (game: GameData?) -> Unit) {
