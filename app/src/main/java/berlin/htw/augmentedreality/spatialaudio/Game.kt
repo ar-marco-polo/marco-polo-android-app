@@ -1,9 +1,7 @@
 package berlin.htw.augmentedreality.spatialaudio
 
-import android.app.Activity
 import com.fasterxml.jackson.module.kotlin.*
 import android.content.Context
-import android.content.Intent
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -11,7 +9,6 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.media.MediaPlayer
 import android.util.Log
-import berlin.htw.augmentedreality.spatialaudio.activities.GameRunningActivity
 import berlin.htw.augmentedreality.spatialaudio.messages.Authentication
 import berlin.htw.augmentedreality.spatialaudio.messages.Movement
 import berlin.htw.augmentedreality.spatialaudio.messages.Status
@@ -51,24 +48,14 @@ object Game {
     val BASE_URL = "http://192.168.0.4:3000"
 
     private var game: GameData? = null
-    private var startActivity: Activity? = null
     private var mediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
-    private val listeners = mapOf(
-            "statusUpdate" to mutableListOf<(Any) -> Unit>(),
-            "movement" to mutableListOf()
-    )
-
-    fun setup(activity: Activity) {
-        if (this.startActivity != null) return
-        this.startActivity = activity
-        FuelManager.instance.basePath = BASE_URL
-    }
-
-    fun createNewGame(handler: (game: GameData?) -> Unit) {
+    fun getOrCreateGame(handler: (game: GameData?) -> Unit) {
         if (game != null) return handler(game)
+
+        FuelManager.instance.basePath = BASE_URL
 
         "/games".httpPost().responseJson { _, _, result ->
             val (data, error) = result
@@ -109,21 +96,20 @@ object Game {
 
     fun amISeeking (): Boolean = game?.me?.isSeeking ?: false
 
-    fun start() {
+    fun start(ctx: Context) {
         // TODO: maybe we can throw here or something to let the user retry when activity is missing
-        val activity = startActivity ?: return
         val game = game ?: return
         val token = game.me.token ?: return
 
         // Initialize MediaPlayer
-        mediaPlayer = MediaPlayer.create(activity, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
+        mediaPlayer = MediaPlayer.create(ctx, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
         mediaPlayer!!.setVolume(0.0f, 0.0f)
         mediaPlayer!!.isLooping = true
         mediaPlayer!!.start()
 
         // set up sensor listener
         // see also: https://source.android.com/devices/sensors/sensor-types#rotation_vector
-        val sensorManager = (activity.getSystemService(Context.SENSOR_SERVICE) as SensorManager)
+        val sensorManager = (ctx.getSystemService(Context.SENSOR_SERVICE) as SensorManager)
 
         // rotation vector (= Accelerometer, Magnetometer, and Gyroscope)
         rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
@@ -150,13 +136,6 @@ object Game {
         } else {
             // TODO: check if player id matches
             game.other?.location = location
-        }
-
-        if (startActivity != null) {
-            val startGameIntent = Intent(startActivity, GameRunningActivity::class.java)
-            startActivity!!.startActivity(startGameIntent)
-            startActivity!!.finish()
-            startActivity = null
         }
 
         GameUpdateEvent.Status(status).emit()

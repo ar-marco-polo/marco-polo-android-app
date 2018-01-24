@@ -16,7 +16,7 @@ class GameJoinActivity : BaseActivity() {
         val gameName = data.pathSegments.last()
         Game.joinGame(gameName) { success ->
             if (success) {
-                Game.start()
+                Game.start(this)
             } else {
                 Toast.makeText(this, "Could not join game", Toast.LENGTH_LONG).show()
             }
