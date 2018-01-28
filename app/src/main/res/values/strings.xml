@@ -9,6 +9,10 @@
         Try finding your friend by pointing your phone into their direction!
     </string>
     <string name="game_create_game_invitation_label">Invite another player to start the game.</string>
+    <string name="game_create_invitation_message">
+        Somebody invited you to a game of Marco Polo! Open the link to join:\n\n
+        %s
+    </string>
 
     <!-- join game screen -->
     <string name="game_join_game_explanation">
