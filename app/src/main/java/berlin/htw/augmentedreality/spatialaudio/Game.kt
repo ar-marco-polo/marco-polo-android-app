@@ -44,6 +44,10 @@ object Game {
             fun emit() = Companion.emit(this)
         }
 
+        class RotationChanged(val Game: GameData, val distance: Float) : GameUpdateEvent() {
+            fun emit() = Companion.emit(this)
+        }
+
         class OtherPlayerJoined : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
@@ -53,10 +57,11 @@ object Game {
         }
     }
 
-    val BASE_URL = "http://192.168.0.4:3000"
+    val BASE_URL = "http://159.89.110.19:3000"
 
     private var game: GameData? = null
-    private var mediaPlayer: MediaPlayer? = null
+    private var trackingMediaPlayer: MediaPlayer? = null
+    private var noiseMediaPlayer: MediaPlayer? = null
     private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
@@ -113,10 +118,15 @@ object Game {
         val token = game.me.token ?: return
 
         // Initialize MediaPlayer
-        mediaPlayer = MediaPlayer.create(ctx, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
-        mediaPlayer!!.setVolume(0.0f, 0.0f)
-        mediaPlayer!!.isLooping = true
-        mediaPlayer!!.start()
+        trackingMediaPlayer = MediaPlayer.create(ctx, R.raw.freesounds_org__384468__frankum__vintage_elecro_pop_loop)
+        trackingMediaPlayer!!.setVolume(0.0f, 0.0f)
+        trackingMediaPlayer!!.isLooping = true
+        trackingMediaPlayer!!.start()
+
+        noiseMediaPlayer = MediaPlayer.create(ctx, R.raw.freesounds_org__35291__jace__continuous_static)
+        noiseMediaPlayer!!.setVolume(0.0f, 0.0f)
+        noiseMediaPlayer!!.isLooping = true
+        noiseMediaPlayer!!.start()
 
         // set up sensor listener
         // see also: https://source.android.com/devices/sensors/sensor-types#rotation_vector
@@ -199,7 +209,7 @@ object Game {
 
     fun teardown() {
         game = null
-        mediaPlayer?.stop()
+        trackingMediaPlayer?.stop()
         rotationSensor = null
         webSocket = null
     }
@@ -228,33 +238,43 @@ object Game {
             // the android os assumes our original device rotation to be laid down flat on the ground, facing the
             // geomagnetic north pole; we position our ears on the top left corner and top right corner of this phone
             val origin = arrayOf(
-                    floatArrayOf(-0.1f, 1.0f, 0.0f),
-                    floatArrayOf(0.1f, 1.0f, 0.0f)
+                floatArrayOf(-0.1f, 1.0f, 0.0f),
+                floatArrayOf(0.1f, 1.0f, 0.0f)
             )
 
             // now we rotate the original ears by our device position
             val ears = origin.map { ear -> VectorUtils.rotateByQuaternion(quaternion, ear) }
 
             val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
-            val maxDistanceKm = 5
+
+            val maxDistance = 1000
 
             val otherLocationArray = doubleArrayOf(otherLocation.latitude, otherLocation.longitude)
             val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
             val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, otherLocationArray)
-            val distanceToOtherPlayer = Geodesic.distanceBetween(ownLocationArray, otherLocationArray)
+            val distanceToOtherPlayer = ownLocation.distanceTo(otherLocation)
             val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
-            val distanceFactor = (maxDistanceKm - distanceToOtherPlayer) / maxDistanceKm
+            val distanceFactor = (maxDistance - distanceToOtherPlayer) / maxDistance
+
+            val noise = Math.max(
+                    (ownLocation.accuracy + otherLocation.accuracy) / distanceToOtherPlayer.toDouble(),
+                    1.0)
+            val noiseVolume = (noise / 10).toFloat()
+
+            GameUpdateEvent.RotationChanged(game, distanceToOtherPlayer).emit()
 
             DebugUtils.sendEarPositions(ears)
 
             // and calculate the angles between the ears and our sound position
             val volume = ears.map { ear ->
                 val rad = VectorUtils.radiansBetween(ear, vectorToOtherPlayer)
+                val n = noise * Math.PI
                 // rad is in range of [0, PI] audioCurve returns 0 above PI / 2
-                distanceFactor * audioCurve(rad)
+                distanceFactor * audioCurve(rad - n)
             }
 
-            mediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
+            trackingMediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
+            noiseMediaPlayer?.setVolume(noiseVolume, noiseVolume)
         }
     }
 }
