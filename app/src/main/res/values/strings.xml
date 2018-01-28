@@ -25,4 +25,12 @@
     <string name="game_running_hider_text">You should be hiding! \n Your friend is looking for you.</string>
     <string name="game_running_location_accuracy_label_unknown">Waiting for device position...</string>
     <string name="game_running_location_accuracy_label">Current location accuracy: %.1f meters</string>
+
+    <!-- game over alerts -->
+    <string name="alert_player_won_title">Congratulations!</string>
+    <string name="alert_player_won_body">You won. :)</string>
+    <string name="alert_player_won_button_label">Cool!</string>
+    <string name="alert_player_aborted_title">Game ended</string>
+    <string name="alert_player_aborted_body">The other player aborted the game.</string>
+    <string name="alert_player_aborted_button_label">OK</string>
 </resources>
