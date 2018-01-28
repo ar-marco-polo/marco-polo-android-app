@@ -67,7 +67,7 @@ class GameRunningActivity : BaseActivity() {
 
     override fun onSaveInstanceState(outState: Bundle?) {
         val accuracyLabel = findViewById(R.id.game_running__location_accuracy) as TextView
-        outState.putString(accuracyKey, accuracyLabel.text.toString())
+        outState?.putString(accuracyKey, accuracyLabel.text.toString())
         super.onSaveInstanceState(outState)
     }
 
