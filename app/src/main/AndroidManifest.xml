@@ -29,12 +29,11 @@
 
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-
                 <data
-                        android:host="192.168.0.4"
-                        android:pathPrefix="/games"
-                        android:port="3000"
-                        android:scheme="http"/>
+                    android:host="159.89.110.19"
+                    android:pathPrefix="/games"
+                    android:port="3000"
+                    android:scheme="http"/>
             </intent-filter>
         </activity>
         <activity android:name=".activities.GameRunningActivity">
