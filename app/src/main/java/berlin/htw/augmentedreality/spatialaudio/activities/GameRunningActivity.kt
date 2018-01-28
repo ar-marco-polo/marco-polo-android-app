@@ -12,6 +12,7 @@ import berlin.htw.augmentedreality.spatialaudio.R
 class GameRunningActivity : BaseActivity() {
 
     private val tag = "GAME_RUNNING_ACTIVITY"
+    private val accuracyKey = "ACCURACY_LABEL"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +39,11 @@ class GameRunningActivity : BaseActivity() {
             abortGame()
         }
 
+        val previousAccuracyLabel = savedInstanceState?.getString(accuracyKey)
+        if (previousAccuracyLabel != null) {
+            accuracy.text = previousAccuracyLabel
+        }
+
         Game.GameUpdateEvent on {
             when (it) {
                 is Game.GameUpdateEvent.OwnLocationChanged -> {
@@ -57,6 +63,12 @@ class GameRunningActivity : BaseActivity() {
                 }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle?) {
+        val accuracyLabel = findViewById(R.id.game_running__location_accuracy) as TextView
+        outState.putString(accuracyKey, accuracyLabel.text.toString())
+        super.onSaveInstanceState(outState)
     }
 
     fun gameOver() {

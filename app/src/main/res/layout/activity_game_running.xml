@@ -43,7 +43,7 @@
                 android:gravity="center"
                 android:textColor="#eee"
                 android:textSize="14dp"
-                android:text="@string/game_running_location_accuracy_label"
+                android:text="@string/game_running_location_accuracy_label_unknown"
                 android:layout_marginBottom="6dp" />
     </LinearLayout>
 </RelativeLayout>

@@ -19,7 +19,15 @@
                 android:textColor="#eee"
                 android:textSize="18dp"
                 android:layout_marginBottom="6dp"
-                android:text="@string/game_create_game_explanation_label"/>
+                android:text="@string/game_create_game_explanation" android:padding="24dp"/>
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#eee"
+                android:textSize="18dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/game_create_game_invitation_label"/>
         <Button
                 android:id="@+id/game_creation_button"
                 android:text="Invite other Player"
