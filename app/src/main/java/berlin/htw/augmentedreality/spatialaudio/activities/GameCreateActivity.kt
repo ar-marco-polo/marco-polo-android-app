@@ -29,7 +29,7 @@ class GameCreateActivity : BaseActivity() {
                     val sendIntent = Intent()
                     val invitationLink = "${Game.BASE_URL}/games/${game.name}"
                     sendIntent.action = Intent.ACTION_SEND
-                    sendIntent.putExtra(Intent.EXTRA_TEXT, invitationLink)
+                    sendIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.game_create_invitation_message, invitationLink))
                     sendIntent.type = "text/plain"
                     startActivity(sendIntent)
                 } else {

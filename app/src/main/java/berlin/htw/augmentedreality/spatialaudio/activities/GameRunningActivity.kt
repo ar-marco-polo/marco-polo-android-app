@@ -12,6 +12,7 @@ import berlin.htw.augmentedreality.spatialaudio.R
 class GameRunningActivity : BaseActivity() {
 
     private val tag = "GAME_RUNNING_ACTIVITY"
+    private val accuracyKey = "ACCURACY_LABEL"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +39,11 @@ class GameRunningActivity : BaseActivity() {
             abortGame()
         }
 
+        val previousAccuracyLabel = savedInstanceState?.getString(accuracyKey)
+        if (previousAccuracyLabel != null) {
+            accuracy.text = previousAccuracyLabel
+        }
+
         Game.GameUpdateEvent on {
             when (it) {
                 is Game.GameUpdateEvent.RotationChanged -> {
@@ -61,6 +67,12 @@ class GameRunningActivity : BaseActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle?) {
+        val accuracyLabel = findViewById(R.id.game_running__location_accuracy) as TextView
+        outState?.putString(accuracyKey, accuracyLabel.text.toString())
+        super.onSaveInstanceState(outState)
+    }
+
     fun gameOver() {
         Log.d(tag, "Clicked 'I Was Found' button")
         Game.gotCaught()
@@ -75,8 +87,11 @@ class GameRunningActivity : BaseActivity() {
 
     fun displayCongratulation() {
         AlertDialog.Builder(this)
-                .setTitle("Congratulations!")
-                .setMessage("You won. :)")
+                .setTitle(getString(R.string.alert_player_won_title))
+                .setMessage(getString(R.string.alert_player_won_body))
+                .setPositiveButton(getString(R.string.alert_player_won_button_label)) { _, _ ->
+                    displayNewGameScreen()
+                }
                 .setOnDismissListener {
                     displayNewGameScreen()
                 }
@@ -85,8 +100,11 @@ class GameRunningActivity : BaseActivity() {
 
     fun displayOtherPlayerAborted() {
         AlertDialog.Builder(this)
-                .setTitle("Game ended")
-                .setMessage("The other player aborted the game.")
+                .setTitle(getString(R.string.alert_player_aborted_title))
+                .setMessage(getString(R.string.alert_player_aborted_body))
+                .setPositiveButton(getString(R.string.alert_player_aborted_button_label)) { _, _ ->
+                    displayNewGameScreen()
+                }
                 .setOnDismissListener {
                     displayNewGameScreen()
                 }
