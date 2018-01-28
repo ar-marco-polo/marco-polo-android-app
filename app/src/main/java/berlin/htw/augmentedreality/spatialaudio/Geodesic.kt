@@ -3,18 +3,6 @@ package berlin.htw.augmentedreality.spatialaudio
 object Geodesic {
     val EARTH_RADIUS_KM = 6372.795477598
 
-    val TO_RAD = Math.PI / 180
-
-    /**
-     * Returns distance between a and b in kilometers
-     * algorithm taken from https://www.sunearthtools.com/tools/distance.php
-     *
-     * @param a     Array of length 2 with latitude and longitude
-     * @param b     Array of length 2 with latitude and longitude
-     */
-    fun distanceBetween (a: DoubleArray, b: DoubleArray) =
-            EARTH_RADIUS_KM * Math.acos(Math.sin(a[0] * TO_RAD) * Math.sin(b[0] * TO_RAD) + Math.cos(a[0] * TO_RAD) * Math.cos(b[0] * TO_RAD) * Math.cos(a[1] * TO_RAD - b[1] * TO_RAD))
-
     /**
      * Returns an angle between -PI and PI, where 0 is the north pole and the angle turns counterclockwise
      * algorithm taken from http://www.movable-type.co.uk/scripts/latlong.html

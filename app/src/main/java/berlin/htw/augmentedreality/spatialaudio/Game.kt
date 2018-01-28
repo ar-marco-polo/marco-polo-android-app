@@ -2,10 +2,7 @@ package berlin.htw.augmentedreality.spatialaudio
 
 import com.fasterxml.jackson.module.kotlin.*
 import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
+import android.hardware.*
 import android.location.Location
 import android.media.MediaPlayer
 import android.util.Log
@@ -59,15 +56,17 @@ object Game {
 
     val BASE_URL = "http://159.89.110.19:3000"
 
+    private var isInitialized = false
     private var game: GameData? = null
     private var trackingMediaPlayer: MediaPlayer? = null
     private var noiseMediaPlayer: MediaPlayer? = null
-    private var rotationSensor: Sensor? = null
     private var webSocket: Socket? = null
 
     fun setup() {
+        if (isInitialized) return
         FuelManager.instance.basePath = BASE_URL
         FuelManager.instance.addRequestInterceptor(cUrlLoggingRequestInterceptor())
+        isInitialized = true
     }
 
     fun getOrCreateGame(handler: (game: GameData?) -> Unit) {
@@ -128,14 +127,6 @@ object Game {
         noiseMediaPlayer!!.isLooping = true
         noiseMediaPlayer!!.start()
 
-        // set up sensor listener
-        // see also: https://source.android.com/devices/sensors/sensor-types#rotation_vector
-        val sensorManager = (ctx.getSystemService(Context.SENSOR_SERVICE) as SensorManager)
-
-        // rotation vector (= Accelerometer, Magnetometer, and Gyroscope)
-        rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-        sensorManager.registerListener(RotationEventListener(), rotationSensor, SensorManager.SENSOR_DELAY_NORMAL)
-
         webSocket = connectSocket(game.name, game.me.id, token)
 
         webSocket!!
@@ -186,6 +177,42 @@ object Game {
         GameUpdateEvent.OwnLocationChanged(location).emit()
     }
 
+    fun handleRotationChange(ears: List<FloatArray>) {
+        // make shure game is set up with locations
+        val game = Game.game ?: return
+        val ownLocation = game.me.location ?: return
+        val otherLocation = game.other?.location ?: return
+
+        val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
+
+        val maxDistance = 1000
+
+        val otherLocationArray = doubleArrayOf(otherLocation.latitude, otherLocation.longitude)
+        val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
+        val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, otherLocationArray)
+        val distanceToOtherPlayer = ownLocation.distanceTo(otherLocation)
+        val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
+        val distanceFactor = (maxDistance - distanceToOtherPlayer) / maxDistance
+
+        val noise = Math.min(
+                (ownLocation.accuracy + otherLocation.accuracy) / distanceToOtherPlayer.toDouble(),
+                1.0)
+        val noiseVolume = (noise / 10).toFloat()
+
+        // and calculate the angles between the ears and our sound position
+        val volume = ears.map { ear ->
+            val rad = VectorUtils.radiansBetween(ear, vectorToOtherPlayer)
+            val n = noise * Math.PI
+            // rad is in range of [0, PI] audioCurve returns 0 above PI / 2
+            distanceFactor * audioCurve(rad - n)
+        }
+
+        Game.trackingMediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
+        Game.noiseMediaPlayer?.setVolume(noiseVolume, noiseVolume)
+
+        Game.GameUpdateEvent.RotationChanged(game, distanceToOtherPlayer).emit()
+    }
+
     private fun connectSocket(gameName: String, playerId: String, token: String): Socket {
         val socket = IO.socket("$BASE_URL")
         socket
@@ -210,7 +237,6 @@ object Game {
     fun teardown() {
         game = null
         trackingMediaPlayer?.stop()
-        rotationSensor = null
         webSocket = null
     }
 
@@ -222,59 +248,5 @@ object Game {
     fun gotCaught() {
         webSocket!!.emit("gotCaught")
         teardown()
-    }
-
-    private class RotationEventListener : SensorEventListener {
-        override fun onAccuracyChanged(s: Sensor?, a: Int) {}
-        override fun onSensorChanged(event: SensorEvent) {
-            // make shure game is set up with locations
-            val game = game ?: return
-            val ownLocation = game.me.location ?: return
-            val otherLocation = game.other?.location ?: return
-
-            val (x, y, z, w) = event.values
-            val quaternion = floatArrayOf(w, x, y, z)
-
-            // the android os assumes our original device rotation to be laid down flat on the ground, facing the
-            // geomagnetic north pole; we position our ears on the top left corner and top right corner of this phone
-            val origin = arrayOf(
-                floatArrayOf(-0.1f, 1.0f, 0.0f),
-                floatArrayOf(0.1f, 1.0f, 0.0f)
-            )
-
-            // now we rotate the original ears by our device position
-            val ears = origin.map { ear -> VectorUtils.rotateByQuaternion(quaternion, ear) }
-
-            val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
-
-            val maxDistance = 1000
-
-            val otherLocationArray = doubleArrayOf(otherLocation.latitude, otherLocation.longitude)
-            val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
-            val directionToOtherPlayer = Geodesic.bearing(ownLocationArray, otherLocationArray)
-            val distanceToOtherPlayer = ownLocation.distanceTo(otherLocation)
-            val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
-            val distanceFactor = (maxDistance - distanceToOtherPlayer) / maxDistance
-
-            val noise = Math.max(
-                    (ownLocation.accuracy + otherLocation.accuracy) / distanceToOtherPlayer.toDouble(),
-                    1.0)
-            val noiseVolume = (noise / 10).toFloat()
-
-            GameUpdateEvent.RotationChanged(game, distanceToOtherPlayer).emit()
-
-            DebugUtils.sendEarPositions(ears)
-
-            // and calculate the angles between the ears and our sound position
-            val volume = ears.map { ear ->
-                val rad = VectorUtils.radiansBetween(ear, vectorToOtherPlayer)
-                val n = noise * Math.PI
-                // rad is in range of [0, PI] audioCurve returns 0 above PI / 2
-                distanceFactor * audioCurve(rad - n)
-            }
-
-            trackingMediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
-            noiseMediaPlayer?.setVolume(noiseVolume, noiseVolume)
-        }
     }
 }
