@@ -45,7 +45,6 @@ object RotationUtils {
 
             // now we rotate the original ears by our device position
             val ears = origin.map { ear -> VectorUtils.rotateByQuaternion(quaternion, ear) }
-            DebugUtils.sendEarPositions(ears)
             Game.handleRotationChange(ears)
         }
     }
@@ -66,7 +65,6 @@ object RotationUtils {
                 val success = SensorManager.getRotationMatrix(R, FloatArray(9), gravity, geomagnetic)
                 if (success) {
                     val ears = origin.map { _ -> floatArrayOf(R[3], R[4], 0f) }
-                    DebugUtils.sendEarPositions(ears)
                     Game.handleRotationChange(ears)
                 }
             }

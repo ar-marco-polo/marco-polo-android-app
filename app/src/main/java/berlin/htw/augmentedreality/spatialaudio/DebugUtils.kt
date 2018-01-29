@@ -31,7 +31,7 @@ object DebugUtils {
         isInitialized = true
     }
 
-    fun sendEarPositions(ears: List<FloatArray>) {
+    fun sendPositions(ears: List<FloatArray>, vectorToOtherPlayer: FloatArray, distance: Float) {
         if (!IS_ACTIVE) return
 
         // send ear positions to debug server
@@ -40,7 +40,13 @@ object DebugUtils {
                     {
                         "ears": [${ears.map {
                             "[${it.joinToString(",")}]"
-                        }.joinToString(",")}]
+                        }.joinToString(",")}],
+                        "vectorToOtherPlayer": [
+                            ${vectorToOtherPlayer[0]},
+                            ${vectorToOtherPlayer[1]},
+                            ${vectorToOtherPlayer[2]}
+                        ],
+                        "distance": $distance
                     }
                     """
             webSocket.emit("rotation", jsonString)

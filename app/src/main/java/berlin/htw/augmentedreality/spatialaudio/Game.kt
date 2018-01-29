@@ -210,6 +210,7 @@ object Game {
         Game.trackingMediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
         Game.noiseMediaPlayer?.setVolume(noiseVolume, noiseVolume)
 
+        DebugUtils.sendPositions(ears, vectorToOtherPlayer, distanceFactor)
         Game.GameUpdateEvent.RotationChanged(game, distanceToOtherPlayer).emit()
     }
 
