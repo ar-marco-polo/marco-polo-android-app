@@ -54,7 +54,7 @@ class GameRunningActivity : BaseActivity() {
                         val combinedAccuracy = myLocation.accuracy + otherLocation.accuracy
                         val label = getString(R.string.game_running_location_accuracy_label, combinedAccuracy)
                         runOnUiThread {
-                            accuracy.text = label + "dist: ${myLocation.distanceTo(otherLocation)}"
+                            accuracy.text = label
                         }
                     }
                 }

@@ -183,7 +183,7 @@ object Game {
         val ownLocation = game.me.location ?: return
         val otherLocation = game.other?.location
 
-        val maxNoise = 0.1f
+        val maxNoise = 0.07f
         val maxDistance = 1000
 
         if (otherLocation == null) {
