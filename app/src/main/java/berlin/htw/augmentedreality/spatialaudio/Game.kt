@@ -183,7 +183,7 @@ object Game {
         val ownLocation = game.me.location ?: return
         val otherLocation = game.other?.location
 
-        val maxNoise = 0.07f
+        val maxNoise = 0.1f
         val maxDistance = 1000
 
         if (otherLocation == null) {
@@ -200,16 +200,28 @@ object Game {
         val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
         val distanceFactor = (maxDistance - distanceToOtherPlayer) / maxDistance
         val combinedAccuracy = ownLocation.accuracy + otherLocation.accuracy
+        val distanceGreaterZero = Math.max(distanceToOtherPlayer.toDouble(), 0.001)
 
-        val noise = Math.min(combinedAccuracy / (distanceToOtherPlayer.toDouble() + 0.001), 1.0)
-        val noiseVolume = (Math.pow(noise, 2.0) * maxNoise).toFloat()
+        // use quadratic function to decrease effect of low noise
+        val noise = Math.min(Math.pow(combinedAccuracy / distanceGreaterZero, 2.0), 1.0)
+        val noiseVolume = (noise * maxNoise).toFloat()
 
         // and calculate the angles between the ears and our sound position
         val volume = ears.map { ear ->
+            // rad is in range of [0, PI]
             val rad = VectorUtils.radiansBetween(ear, vectorToOtherPlayer)
-            val n = noise * Math.PI
-            // rad is in range of [0, PI] audioCurve returns 0 above PI / 2
-            distanceFactor * audioCurve(rad - n)
+            // rad = 0 leads to maximum volume so when we have a lof of noise we move rad
+            // back to 0 because we can't really tell where the sound is coming from
+            val x = Math.max(rad - noise * Math.PI, 0.0)
+
+            // randomly set volume to 0 based on noise
+            // noise and Math.random run from 0 to 1 so the more noise we have the
+            // less likely it is that we get a sound
+            if (noise < 0.5 || Math.random() > noise)
+                // distance factor runs from 0 to 1 use 4th exponent to make volume increase
+                // more obvious when one is close to other player
+                Math.pow(distanceFactor.toDouble(), 4.0) * audioCurve(x) // audioCurve returns 0 above PI / 2
+            else 0.0
         }
 
         Game.trackingMediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())

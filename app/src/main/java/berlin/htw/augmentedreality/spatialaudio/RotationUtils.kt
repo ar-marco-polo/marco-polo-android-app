@@ -64,7 +64,7 @@ object RotationUtils {
                 val R = FloatArray(9)
                 val success = SensorManager.getRotationMatrix(R, FloatArray(9), gravity, geomagnetic)
                 if (success) {
-                    val ears = origin.map { _ -> floatArrayOf(R[3], R[4], 0f) }
+                    val ears = origin.map { _ -> floatArrayOf(-R[3], R[4], 0f) }
                     Game.handleRotationChange(ears)
                 }
             }
