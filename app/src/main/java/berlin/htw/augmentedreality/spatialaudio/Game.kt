@@ -41,7 +41,7 @@ object Game {
             fun emit() = Companion.emit(this)
         }
 
-        class RotationChanged(val Game: GameData, val distance: Float) : GameUpdateEvent() {
+        class RotationChanged(val game: GameData) : GameUpdateEvent() {
             fun emit() = Companion.emit(this)
         }
 
@@ -181,11 +181,17 @@ object Game {
         // make shure game is set up with locations
         val game = Game.game ?: return
         val ownLocation = game.me.location ?: return
-        val otherLocation = game.other?.location ?: return
+        val otherLocation = game.other?.location
+
+        val maxNoise = 0.07f
+        val maxDistance = 1000
+
+        if (otherLocation == null) {
+            Game.noiseMediaPlayer?.setVolume(maxNoise, maxNoise)
+            return
+        }
 
         val audioCurve = { x: Double -> if (x > Math.PI / 2) 0.0 else Math.pow(x - 2.16, 6.0) * 0.01 }
-
-        val maxDistance = 1000
 
         val otherLocationArray = doubleArrayOf(otherLocation.latitude, otherLocation.longitude)
         val ownLocationArray = doubleArrayOf(ownLocation.latitude, ownLocation.longitude)
@@ -193,11 +199,10 @@ object Game {
         val distanceToOtherPlayer = ownLocation.distanceTo(otherLocation)
         val vectorToOtherPlayer = Geodesic.bearingToVector3(directionToOtherPlayer)
         val distanceFactor = (maxDistance - distanceToOtherPlayer) / maxDistance
+        val combinedAccuracy = ownLocation.accuracy + otherLocation.accuracy
 
-        val noise = Math.min(
-                (ownLocation.accuracy + otherLocation.accuracy) / distanceToOtherPlayer.toDouble(),
-                1.0)
-        val noiseVolume = (noise / 10).toFloat()
+        val noise = Math.min(combinedAccuracy / (distanceToOtherPlayer.toDouble() + 0.001), 1.0)
+        val noiseVolume = (Math.pow(noise, 2.0) * maxNoise).toFloat()
 
         // and calculate the angles between the ears and our sound position
         val volume = ears.map { ear ->
@@ -210,8 +215,8 @@ object Game {
         Game.trackingMediaPlayer?.setVolume(volume[0].toFloat(), volume[1].toFloat())
         Game.noiseMediaPlayer?.setVolume(noiseVolume, noiseVolume)
 
-        DebugUtils.sendPositions(ears, vectorToOtherPlayer, distanceFactor)
-        Game.GameUpdateEvent.RotationChanged(game, distanceToOtherPlayer).emit()
+        DebugUtils.sendPositions(ears, vectorToOtherPlayer, 1 - distanceFactor)
+        Game.GameUpdateEvent.RotationChanged(game).emit()
     }
 
     private fun connectSocket(gameName: String, playerId: String, token: String): Socket {
@@ -238,6 +243,8 @@ object Game {
     fun teardown() {
         game = null
         trackingMediaPlayer?.stop()
+        noiseMediaPlayer?.stop()
+        webSocket?.disconnect()
         webSocket = null
     }
 

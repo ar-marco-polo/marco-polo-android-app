@@ -15,18 +15,18 @@ object DebugUtils {
         // Connect to webSocket to send data to debug view
         webSocket = IO.socket(SERVER_URL)
         webSocket!!
-                .on(Socket.EVENT_CONNECT_ERROR, { e ->
-                    Log.e("SOCKET", "Connection error %s".format(e))
-                })
-                .on(Socket.EVENT_CONNECT_TIMEOUT, { e ->
-                    Log.e("SOCKET", "Connection timeout %s".format(e))
-                })
-                .on(Socket.EVENT_ERROR, { e ->
-                    Log.e("SOCKET", "Connection error %s".format(e))
-                })
-                .on(Socket.EVENT_CONNECT, { e ->
-                    Log.d("SOCKET", "Connection established %s".format(e))
-                })
+            .on(Socket.EVENT_CONNECT_ERROR, { e ->
+                Log.e("SOCKET", "Connection error %s".format(e))
+            })
+            .on(Socket.EVENT_CONNECT_TIMEOUT, { e ->
+                Log.e("SOCKET", "Connection timeout %s".format(e))
+            })
+            .on(Socket.EVENT_ERROR, { e ->
+                Log.e("SOCKET", "Connection error %s".format(e))
+            })
+            .on(Socket.EVENT_CONNECT, { e ->
+                Log.d("SOCKET", "Connection established %s".format(e))
+            })
         webSocket!!.connect()
         isInitialized = true
     }

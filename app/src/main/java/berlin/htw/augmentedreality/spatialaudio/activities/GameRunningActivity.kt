@@ -48,10 +48,14 @@ class GameRunningActivity : BaseActivity() {
         Game.GameUpdateEvent on {
             when (it) {
                 is Game.GameUpdateEvent.RotationChanged -> {
-                    // val loc = it.location
-                    // val label = getString(R.string.game_running_location_accuracy_label, loc.accuracy)
-                    runOnUiThread {
-                        accuracy.text = it.distance.toString()
+                    val otherLocation = it.game.other?.location
+                    val myLocation = it.game.me.location
+                    if (otherLocation != null && myLocation != null) {
+                        val combinedAccuracy = myLocation.accuracy + otherLocation.accuracy
+                        val label = getString(R.string.game_running_location_accuracy_label, combinedAccuracy)
+                        runOnUiThread {
+                            accuracy.text = label
+                        }
                     }
                 }
                 is Game.GameUpdateEvent.OtherLocationChanged -> Log.d(tag, "Got status event from server")
