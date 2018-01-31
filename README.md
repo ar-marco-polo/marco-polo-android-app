@@ -13,6 +13,20 @@ Our tests have shown that with mid- to high-end Android devices the average accu
 
 We evaluated multiple other tracking technologies, amongst others the [find framework](https://github.com/schollz/find) or Bluetooth Beacons for indoor positioning. Unfortunately none matched up with our goal of bringing the game to as many devices in as many situations as possible.
 
+## How we calculate sound
+On modern Android devices we use the fused `Sensor.TYPE_ROTATION_VECTOR` see: https://developer.android.com/guide/topics/sensors/sensors_motion.html to get the device orientation.
+On older devices we use `Sensor.TYPE_ACCELEROMETER` and `Sensor.TYPE_MAGNETIC_FIELD` to get the two compass diretion the device is pointing to.
+From this we get a normalized vector in a 3D coordinate system pointing in the device direction.
+In fact we use two vectors with a small offset to calculate different volumes for each stereo channel (= ear).
+
+With the position of the device and the position we got from the other player we can calculate the distance to the other
+player and a vector pointing in its direction.
+Then we can then calulate the angles between the vector pointing to the other player and the vectors of the device.
+The lower the angle the higher is the volume representing the other player.
+
+To account for GPS inaccuracy we calculate a noise factor which is the relation between the players and the accuracy of the GPS. With very little noise one will have to point the phone diretly in the direction of the other player to hear him, when the accuracy drops one can hear the other player at an broader angle.
+When the noise gets above a certian threshold we play a noise sound and make the sound of the other player stutter.
+
 ## Attribution
 
 We took the sounds in the game from [freesound.org](https://freesound.org/)
