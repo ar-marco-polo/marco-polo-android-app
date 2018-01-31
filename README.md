@@ -24,7 +24,7 @@ player and a vector pointing in its direction.
 Then we can then calulate the angles between the vector pointing to the other player and the vectors of the device.
 The lower the angle the higher is the volume representing the other player.
 
-![img](https://github.com/ar-marco-polo/marco-polo-android-app/blob/master/screenshots/Screenshot%202018-01-31%20at%2016.16.33.png)
+<img width="300px" src="https://github.com/ar-marco-polo/marco-polo-android-app/blob/master/screenshots/Screenshot%202018-01-31%20at%2016.16.33.png" />
 
 On the Image you can see the device vectors on pink, the vector of the other player in yellow and the coordinate system in green, red and blue.
 
