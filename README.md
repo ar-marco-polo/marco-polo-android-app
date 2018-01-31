@@ -26,7 +26,7 @@ The lower the angle the higher is the volume representing the other player.
 
 <img width="300px" src="https://github.com/ar-marco-polo/marco-polo-android-app/blob/master/screenshots/Screenshot%202018-01-31%20at%2016.16.33.png" />
 
-On the Image you can see the device vectors on pink, the vector of the other player in yellow and the coordinate system in green, red and blue.
+On the image you can see from above: the device vectors on pink, the vector of the other player in yellow and the coordinate system in green, red (pointing to the sky) and blue.
 
 To account for GPS inaccuracy we calculate a noise factor which is the relation between the players and the accuracy of the GPS. With very little noise one will have to point the phone diretly in the direction of the other player to hear him, when the accuracy drops one can hear the other player at an broader angle.
 When the noise gets above a certian threshold we play a noise sound and make the sound of the other player stutter.
