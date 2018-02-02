@@ -22,7 +22,7 @@ We use this to construct two vectors pointing from its bottom center to its top 
 
 On the image you can see from above: the device vectors in pink, the vector of the other player in yellow and the coordinate system in green, red (pointing to the sky) and blue.
 
-To account for GPS inaccuracy we calculate a noise factor which is the relation between the players and the accuracy of the GPS. With very little noise one will have to point the phone diretly in the direction of the other player to hear him, when the accuracy drops one can hear the other player at an broader angle.
+To account for GPS inaccuracy we calculate a noise factor which is the relation between the accuracy of the GPS and the distance between the players. With very little noise one will have to point the phone diretly in the direction of the other player to hear him, when the accuracy drops one can hear the other player at an broader angle.
 When the noise gets above a certian threshold we play a noise sound and make the sound of the other player stutter.
 
 ## Notes on GPS
