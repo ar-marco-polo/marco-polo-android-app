@@ -11,7 +11,7 @@ The project consists of an Android application and a web server that can be foun
 
 To create the illusion of a virtual "directional microphone" we generate a sound that changes with the distance to another player and is also influenced by pointing towards or away from them.
 
-We use the Google Play Services to get a device's current location. Once we know our own location and that of another play we can create a vector between these two points. We calculate the distance between our device and that of another player.
+We use the Google Play Services to get a device's current location. Once we know our own location and that of another player we can create a vector between these two points. We calculate the distance between our device and that of another player.
 
 On modern Android devices we use the fused `Sensor.TYPE_ROTATION_VECTOR` ([Android Documentation](https://developer.android.com/guide/topics/sensors/sensors_motion.html)) to get the device orientation.
 On older devices we use `Sensor.TYPE_ACCELEROMETER` and `Sensor.TYPE_MAGNETIC_FIELD` to get the device's compass direction. From these APIs we receive a normalized vector in a 3d coordinate system pointing in the device direction.
